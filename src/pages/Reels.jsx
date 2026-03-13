@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 
-function ReelItem({ reel, isActive }) {
+function ReelItem({ reel, isActive, shouldLoad }) {
   const { user } = useAuthStore()
   const videoRef = useRef(null)
   const [muted, setMuted] = useState(false)
@@ -58,15 +58,19 @@ function ReelItem({ reel, isActive }) {
     <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden" onClick={togglePlay}>
       {/* Video */}
       {reel.media_url ? (
-        <video
-          ref={videoRef}
-          src={reel.media_url}
-          className="w-full h-full object-cover"
-          loop
-          playsInline
-          muted={muted}
-          preload="metadata"
-        />
+        shouldLoad ? (
+          <video
+            ref={videoRef}
+            src={reel.media_url}
+            className="w-full h-full object-cover"
+            loop
+            playsInline
+            muted={muted}
+            preload="metadata"
+          />
+        ) : (
+          <div className="w-full h-full bg-black" />
+        )
       ) : (
         <div className="w-full h-full flex items-center justify-center"
           style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
@@ -224,7 +228,12 @@ export default function Reels() {
       ) : (
         <div ref={containerRef} className="reel-container">
           {reels.map((reel, i) => (
-            <ReelItem key={reel.id} reel={reel} isActive={i === activeIndex} />
+            <ReelItem 
+              key={reel.id} 
+              reel={reel} 
+              isActive={i === activeIndex} 
+              shouldLoad={Math.abs(i - activeIndex) <= 2}
+            />
           ))}
         </div>
       )}
