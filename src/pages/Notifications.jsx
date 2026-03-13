@@ -7,10 +7,10 @@ import { useAuthStore } from '../context/authStore'
 import { formatDistanceToNow } from 'date-fns'
 
 const TYPE_CONFIG = {
-  like:    { icon: Heart,          color: 'var(--neon-pink)',   bg: 'rgba(255,0,110,0.1)'  },
-  comment: { icon: MessageCircle,  color: 'var(--neon-cyan)',   bg: 'rgba(0,245,255,0.1)'  },
-  follow:  { icon: UserPlus,       color: 'var(--neon-purple)', bg: 'rgba(191,0,255,0.1)'  },
-  message: { icon: MessageCircle,  color: 'var(--neon-green)',  bg: 'rgba(0,255,136,0.1)'  },
+  like:    { icon: Heart,          color: 'var(--accent-secondary)',  bg: 'rgba(255,107,157,0.1)'  },
+  comment: { icon: MessageCircle,  color: 'var(--accent-primary)',   bg: 'rgba(108,99,255,0.1)'   },
+  follow:  { icon: UserPlus,       color: 'var(--accent-tertiary)',  bg: 'rgba(0,210,255,0.1)'    },
+  message: { icon: MessageCircle,  color: 'var(--accent-success)',   bg: 'rgba(16,185,129,0.1)'   },
 }
 
 const SEED_NOTIFS = [
@@ -35,7 +35,6 @@ export default function Notifications() {
   const fetchNotifs = async () => {
     setLoading(true)
     try {
-      // Real followers
       const { data: follows } = await supabase
         .from('followers')
         .select('created_at, follower:follower_id(id, username, avatar)')
@@ -54,7 +53,6 @@ export default function Notifications() {
         read:     false,
       }))
 
-      // Merge with seed data (seed last so real data is first)
       setNotifs([...realNotifs, ...SEED_NOTIFS])
     } catch {
       setNotifs(SEED_NOTIFS)
@@ -75,12 +73,12 @@ export default function Notifications() {
   return (
     <div className="relative z-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-sm font-bold tracking-widest gradient-text">NOTIFICATIONS</h1>
+          <h1 className="font-display text-sm font-bold tracking-widest text-gradient">NOTIFICATIONS</h1>
           {unreadCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-mono"
-              style={{ background: 'rgba(255,0,110,0.2)', color: 'var(--neon-pink)', border: '1px solid rgba(255,0,110,0.3)' }}>
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono font-semibold"
+              style={{ background: 'rgba(255,107,157,0.15)', color: 'var(--accent-secondary)', border: '1px solid rgba(255,107,157,0.3)' }}>
               {unreadCount}
             </span>
           )}
@@ -94,14 +92,14 @@ export default function Notifications() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 hide-scrollbar">
         {['all', 'like', 'comment', 'follow', 'message'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-display tracking-wider transition-all"
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-display tracking-wider transition-all font-semibold"
             style={{
-              background: filter === f ? 'rgba(0,245,255,0.15)' : 'rgba(10,10,18,0.6)',
-              border:     filter === f ? '1px solid rgba(0,245,255,0.4)' : '1px solid rgba(0,245,255,0.08)',
-              color:      filter === f ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.4)',
+              background: filter === f ? 'rgba(108,99,255,0.12)' : 'var(--bg-surface)',
+              border:     filter === f ? '1px solid rgba(108,99,255,0.35)' : '1px solid var(--border-subtle)',
+              color:      filter === f ? 'var(--accent-primary)' : 'var(--text-muted)',
             }}>
             {f.toUpperCase()}
           </button>
@@ -112,7 +110,7 @@ export default function Notifications() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="glass rounded-xl p-4 flex gap-3">
+            <div key={i} className="card-glass rounded-xl p-4 flex gap-3">
               <div className="skeleton w-10 h-10 rounded-full" />
               <div className="flex-1 space-y-2">
                 <div className="skeleton h-3 w-48 rounded" />
@@ -123,12 +121,12 @@ export default function Notifications() {
         </div>
       ) : filtered.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="glass rounded-2xl p-12 text-center">
-          <Bell size={36} className="mx-auto mb-4" style={{ color: 'rgba(224,224,255,0.2)' }} />
-          <h3 className="font-display text-xs tracking-wider mb-2" style={{ color: 'var(--neon-cyan)' }}>
+          className="card-glass rounded-2xl p-12 text-center">
+          <Bell size={36} className="mx-auto mb-4" style={{ color: 'var(--text-faint)' }} />
+          <h3 className="font-display text-xs tracking-wider mb-2 text-accent-primary font-semibold">
             ALL CLEAR
           </h3>
-          <p className="text-sm" style={{ color: 'rgba(224,224,255,0.4)' }}>No notifications here</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No notifications here</p>
         </motion.div>
       ) : (
         <div className="space-y-2">
@@ -143,13 +141,13 @@ export default function Notifications() {
                   onClick={() => n.userId && navigate(`/profile/${n.userId}`)}
                   className="flex items-center gap-3 p-4 rounded-xl transition-all cursor-pointer"
                   style={{
-                    background: n.read ? 'rgba(15,15,26,0.5)' : 'rgba(15,15,26,0.8)',
-                    border: n.read ? '1px solid rgba(0,245,255,0.05)' : '1px solid rgba(0,245,255,0.15)',
+                    background: n.read ? 'var(--bg-surface)' : 'var(--bg-card)',
+                    border: n.read ? '1px solid var(--border-subtle)' : '1px solid var(--border-default)',
                   }}>
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
                     <img
-                      src={n.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${n.username}&backgroundColor=040408`}
+                      src={n.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${n.username}&backgroundColor=0B0B0F`}
                       className="w-10 h-10 rounded-full object-cover bg-panel"
                     />
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
@@ -160,11 +158,11 @@ export default function Notifications() {
 
                   {/* Text */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm" style={{ color: '#e0e0ff' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                       <span className="font-semibold" style={{ color: cfg.color }}>{n.username} </span>
                       {n.text}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(224,224,255,0.35)', fontFamily: 'JetBrains Mono' }}>
+                    <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-faint)' }}>
                       {formatDistanceToNow(new Date(n.time), { addSuffix: true })}
                     </p>
                   </div>

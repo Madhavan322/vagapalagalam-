@@ -14,12 +14,17 @@ export const useAuthStore = create(
       setLoading: (loading) => set({ loading }),
 
       initialize: async () => {
-        set({ loading: true })
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const user = await getCurrentUser()
-          set({ session, user, loading: false })
-        } else {
+        try {
+          set({ loading: true })
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            const user = await getCurrentUser()
+            set({ session, user, loading: false })
+          } else {
+            set({ session: null, user: null, loading: false })
+          }
+        } catch (error) {
+          console.error('Auth initialization failed:', error)
           set({ session: null, user: null, loading: false })
         }
       },
@@ -42,8 +47,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   const store = useAuthStore.getState()
   if (event === 'SIGNED_IN' && session) {
     store.setSession(session)
-    const user = await getCurrentUser()
-    store.setUser(user)
+    try {
+      const user = await getCurrentUser()
+      store.setUser(user)
+    } catch (error) {
+      console.error('Failed to fetch user on auth change:', error)
+    }
   } else if (event === 'SIGNED_OUT') {
     store.logout()
   }

@@ -37,13 +37,13 @@ export default function Profile() {
       setProfile(prof)
       setEditForm({ username: prof?.username || '', bio: prof?.bio || '' })
 
-      // Posts
+      // Image Posts
       const { data: postsData } = await supabase
         .from('posts').select('id, media_url, type, caption')
         .eq('user_id', targetId).eq('type', 'image').order('created_at', { ascending: false })
       setPosts(postsData || [])
 
-      // Reels
+      // Video Reels
       const { data: reelsData } = await supabase
         .from('posts').select('id, media_url, type, caption')
         .eq('user_id', targetId).eq('type', 'video').order('created_at', { ascending: false })
@@ -117,7 +117,7 @@ export default function Profile() {
 
   if (loading) return (
     <div className="relative z-10 space-y-4">
-      <div className="glass rounded-2xl p-6 space-y-4">
+      <div className="card-glass rounded-2xl p-6 space-y-4">
         <div className="flex gap-4">
           <div className="skeleton w-20 h-20 rounded-full" />
           <div className="flex-1 space-y-2">
@@ -136,39 +136,43 @@ export default function Profile() {
   )
 
   if (!profile) return (
-    <div className="relative z-10 glass rounded-2xl p-12 text-center">
-      <p style={{ color: 'rgba(224,224,255,0.4)' }}>User not found</p>
+    <div className="relative z-10 card-glass rounded-2xl p-12 text-center">
+      <p style={{ color: 'var(--text-muted)' }}>User not found</p>
     </div>
   )
+
+  const tabs = [
+    { id: 'posts', icon: Grid, label: 'POSTS' },
+    { id: 'reels', icon: Play, label: 'REELS' },
+  ]
 
   const displayItems = tab === 'posts' ? posts : reels
 
   return (
     <div className="relative z-10">
       {/* Profile card */}
-      <div className="glass rounded-2xl p-5 mb-4">
+      <div className="card-glass rounded-2xl p-5 mb-5">
         <div className="flex items-start gap-4 mb-5">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
             <div className="story-ring p-0.5 rounded-full">
               <div className="bg-void p-0.5 rounded-full">
                 <img
-                  src={profile.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${profile.username}&backgroundColor=040408`}
+                  src={profile.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${profile.username}&backgroundColor=0B0B0F`}
                   className="w-20 h-20 rounded-full object-cover bg-panel"
                 />
               </div>
             </div>
             {isOwn && (
-              <label className="absolute bottom-1 right-1 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, var(--neon-cyan), var(--neon-purple))' }}>
-                <Camera size={12} className="text-void" />
+              <label className="absolute bottom-1 right-1 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer btn-gradient">
+                <Camera size={12} className="text-white" />
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </label>
             )}
             {uploading && (
               <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/50">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgba(0,245,255,0.3)', borderTopColor: 'var(--neon-cyan)' }} />
+                  className="w-5 h-5 rounded-full border-2 border-accent-primary/30 border-t-accent-primary" />
               </div>
             )}
           </div>
@@ -182,17 +186,17 @@ export default function Profile() {
                 <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))}
                   className="cyber-input w-full px-3 py-2 text-xs resize-none" rows={2} placeholder="Your bio..." />
                 <div className="flex gap-2">
-                  <button onClick={handleSaveProfile} className="btn-primary px-3 py-1.5 text-xs">SAVE</button>
+                  <button onClick={handleSaveProfile} className="btn-gradient px-4 py-1.5 text-xs rounded-lg font-semibold">SAVE</button>
                   <button onClick={() => setEditing(false)} className="btn-ghost px-3 py-1.5 text-xs">CANCEL</button>
                 </div>
               </div>
             ) : (
               <>
-                <h2 className="font-semibold text-base" style={{ color: '#e0e0ff' }}>{profile.username}</h2>
-                <p className="text-xs mt-1" style={{ color: 'rgba(224,224,255,0.5)', lineHeight: 1.5 }}>
+                <h2 className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>{profile.username}</h2>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   {profile.bio || 'No bio yet.'}
                 </p>
-                <p className="text-xs mt-1" style={{ color: 'rgba(224,224,255,0.25)', fontFamily: 'JetBrains Mono' }}>
+                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-faint)' }}>
                   {profile.email}
                 </p>
               </>
@@ -201,16 +205,16 @@ export default function Profile() {
         </div>
 
         {/* Stats */}
-        <div className="flex gap-0 mb-5 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,245,255,0.1)' }}>
+        <div className="flex gap-0 mb-5 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
           {[
             { label: 'POSTS',     value: counts.posts },
             { label: 'FOLLOWERS', value: counts.followers },
             { label: 'FOLLOWING', value: counts.following },
           ].map(({ label, value }, i) => (
             <div key={label} className="flex-1 py-3 text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(0,245,255,0.1)' : 'none' }}>
-              <p className="font-display font-bold text-lg gradient-text">{value}</p>
-              <p className="text-xs tracking-wider" style={{ color: 'rgba(224,224,255,0.4)', fontFamily: 'JetBrains Mono', fontSize: '0.6rem' }}>{label}</p>
+              style={{ borderRight: i < 2 ? '1px solid var(--border-default)' : 'none' }}>
+              <p className="font-display font-bold text-lg text-gradient">{value}</p>
+              <p className="text-xs tracking-wider font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>{label}</p>
             </div>
           ))}
         </div>
@@ -230,12 +234,11 @@ export default function Profile() {
         ) : (
           <div className="flex gap-2">
             <motion.button whileTap={{ scale: 0.95 }} onClick={handleFollow}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-display tracking-wider"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-display tracking-wider font-bold transition-all"
               style={{
-                background: following ? 'rgba(255,0,110,0.1)' : 'linear-gradient(135deg,var(--neon-cyan),var(--neon-purple))',
-                border: following ? '1px solid rgba(255,0,110,0.3)' : 'none',
-                color: following ? 'var(--neon-pink)' : 'var(--void)',
-                fontWeight: 700,
+                background: following ? 'rgba(255,107,157,0.1)' : 'linear-gradient(135deg,var(--accent-primary),var(--accent-secondary))',
+                border: following ? '1px solid rgba(255,107,157,0.3)' : 'none',
+                color: following ? 'var(--accent-secondary)' : 'white',
               }}>
               {following ? <><UserMinus size={14} /> UNFOLLOW</> : <><UserPlus size={14} /> FOLLOW</>}
             </motion.button>
@@ -248,14 +251,14 @@ export default function Profile() {
       </div>
 
       {/* Content tabs */}
-      <div className="flex mb-3 rounded-xl overflow-hidden glass" style={{ border: '1px solid rgba(0,245,255,0.1)' }}>
-        {[{ id: 'posts', icon: Grid, label: 'POSTS' }, { id: 'reels', icon: Play, label: 'REELS' }].map(t => (
+      <div className="flex mb-4 rounded-xl overflow-hidden card-glass" style={{ border: '1px solid var(--border-default)' }}>
+        {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-display tracking-wider transition-all"
             style={{
-              background: tab === t.id ? 'rgba(0,245,255,0.08)' : 'transparent',
-              color: tab === t.id ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.4)',
-              borderBottom: tab === t.id ? '2px solid var(--neon-cyan)' : '2px solid transparent',
+              background: tab === t.id ? 'rgba(108,99,255,0.08)' : 'transparent',
+              color: tab === t.id ? 'var(--accent-primary)' : 'var(--text-muted)',
+              borderBottom: tab === t.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
             }}>
             <t.icon size={14} /> {t.label}
           </button>
@@ -264,8 +267,8 @@ export default function Profile() {
 
       {/* Grid */}
       {displayItems.length === 0 ? (
-        <div className="glass rounded-2xl p-10 text-center">
-          <p className="text-sm" style={{ color: 'rgba(224,224,255,0.3)' }}>No {tab} yet</p>
+        <div className="card-glass rounded-2xl p-10 text-center">
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No {tab} yet</p>
         </div>
       ) : (
         <div className="explore-grid gap-0.5">
@@ -274,22 +277,23 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.04 }}
               className="relative aspect-square overflow-hidden group cursor-pointer"
-              style={{ background: 'var(--panel)' }}>
+              style={{ background: 'var(--bg-card)' }}>
               {item.media_url ? (
                 item.type === 'video'
                   ? <video src={item.media_url} className="w-full h-full object-cover" />
                   : <img src={item.media_url} className="w-full h-full object-cover" loading="lazy" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center p-2 bg-gradient-to-br from-surface to-panel">
-                  <p className="text-xs text-center" style={{ color: 'rgba(224,224,255,0.5)' }}>
-                    {item.caption?.slice(0, 50)}
+                <div className="w-full h-full flex items-center justify-center p-3"
+                  style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
+                  <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+                    {item.caption?.slice(0, 60)}
                   </p>
                 </div>
               )}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity
                 flex items-center justify-center">
-                {item.type === 'video' ? <Play size={24} style={{ color: 'var(--neon-cyan)' }} />
-                  : <Grid size={20} style={{ color: 'var(--neon-cyan)' }} />}
+                {item.type === 'video' ? <Play size={24} style={{ color: 'var(--accent-primary)' }} />
+                  : <Grid size={20} style={{ color: 'var(--accent-primary)' }} />}
               </div>
             </motion.div>
           ))}

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Image, Video, Type, Hash, X, UploadCloud, ArrowLeft, Clock } from 'lucide-react'
+import { Image, Video, Hash, X, UploadCloud, ArrowLeft, Clock } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, uploadMedia } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
@@ -9,7 +9,6 @@ import toast from 'react-hot-toast'
 const POST_TYPES = [
   { id: 'image',  icon: Image,  label: 'PHOTO',  accept: 'image/*' },
   { id: 'video',  icon: Video,  label: 'VIDEO',  accept: 'video/*' },
-  { id: 'text',   icon: Type,   label: 'TEXT',   accept: null      },
   { id: 'story',  icon: Clock,  label: 'STORY',  accept: 'image/*,video/*' },
 ]
 
@@ -97,11 +96,11 @@ export default function PostCreator() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 btn-ghost px-3 py-2 text-sm">
           <ArrowLeft size={16} /> Back
         </button>
-        <h1 className="font-display text-sm font-bold tracking-widest gradient-text">CREATE</h1>
+        <h1 className="font-display text-sm font-bold tracking-widest text-gradient">CREATE</h1>
         <motion.button
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
           onClick={handleSubmit} disabled={uploading}
-          className="btn-primary px-4 py-2 text-xs"
+          className="btn-gradient px-4 py-2 text-xs rounded-xl font-semibold"
           style={{ opacity: uploading ? 0.5 : 1, cursor: uploading ? 'not-allowed' : 'pointer' }}>
           {uploading ? 'POSTING...' : 'PUBLISH'}
         </motion.button>
@@ -113,12 +112,12 @@ export default function PostCreator() {
           <motion.button key={id} whileTap={{ scale: 0.95 }} onClick={() => { setPostType(id); clearFile() }}
             className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all"
             style={{
-              background: postType === id ? 'rgba(0,245,255,0.12)' : 'rgba(10,10,18,0.6)',
-              border:     postType === id ? '1px solid rgba(0,245,255,0.4)' : '1px solid rgba(0,245,255,0.08)',
+              background: postType === id ? 'rgba(108,99,255,0.12)' : 'var(--bg-surface)',
+              border:     postType === id ? '1px solid rgba(108,99,255,0.35)' : '1px solid var(--border-subtle)',
             }}>
-            <Icon size={18} style={{ color: postType === id ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.4)' }} />
+            <Icon size={18} style={{ color: postType === id ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
             <span className="text-xs font-display tracking-wider"
-              style={{ color: postType === id ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.4)', fontSize: '0.6rem' }}>
+              style={{ color: postType === id ? 'var(--accent-primary)' : 'var(--text-muted)', fontSize: '0.6rem' }}>
               {label}
             </span>
           </motion.button>
@@ -126,7 +125,7 @@ export default function PostCreator() {
       </div>
 
       {/* Media upload */}
-      {postType !== 'text' && (
+      {(
         <div className="mb-4">
           <AnimatePresence mode="wait">
             {preview ? (
@@ -149,14 +148,14 @@ export default function PostCreator() {
                 onClick={() => fileRef.current?.click()}
                 className="rounded-xl p-10 text-center cursor-pointer transition-all"
                 style={{
-                  background: dragOver ? 'rgba(0,245,255,0.08)' : 'rgba(10,10,18,0.6)',
-                  border:     `2px dashed ${dragOver ? 'rgba(0,245,255,0.6)' : 'rgba(0,245,255,0.2)'}`,
+                  background: dragOver ? 'rgba(108,99,255,0.08)' : 'var(--bg-surface)',
+                  border:     `2px dashed ${dragOver ? 'rgba(108,99,255,0.5)' : 'var(--border-default)'}`,
                 }}>
-                <UploadCloud size={36} className="mx-auto mb-3" style={{ color: dragOver ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.3)' }} />
-                <p className="text-sm mb-1" style={{ color: 'rgba(224,224,255,0.6)' }}>
+                <UploadCloud size={36} className="mx-auto mb-3" style={{ color: dragOver ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+                <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                   Drop {activeType?.label.toLowerCase()} here or click to browse
                 </p>
-                <p className="text-xs" style={{ color: 'rgba(224,224,255,0.3)', fontFamily: 'JetBrains Mono' }}>
+                <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
                   {activeType?.id === 'video' ? 'MP4, WebM, OGG' : 'JPG, PNG, GIF, WebP'}
                 </p>
                 <input ref={fileRef} type="file" className="hidden"
@@ -169,24 +168,24 @@ export default function PostCreator() {
 
       {/* Caption */}
       <div className="mb-4">
-        <label className="block text-xs mb-2 tracking-wider"
-          style={{ color: 'rgba(224,224,255,0.5)', fontFamily: 'JetBrains Mono' }}>CAPTION</label>
+        <label className="block text-xs mb-2 tracking-wider font-mono"
+          style={{ color: 'var(--text-muted)' }}>CAPTION</label>
         <textarea
           value={caption} onChange={e => setCaption(e.target.value)}
           className="cyber-input w-full px-4 py-3 text-sm resize-none"
-          rows={postType === 'text' ? 6 : 3}
-          placeholder={postType === 'text' ? 'Share your thoughts with the network...' : 'Write a caption...'}
+          rows={3}
+          placeholder="Write a caption..."
         />
-        <p className="text-right text-xs mt-1" style={{ color: 'rgba(224,224,255,0.25)', fontFamily: 'JetBrains Mono' }}>
+        <p className="text-right text-xs mt-1 font-mono" style={{ color: 'var(--text-faint)' }}>
           {caption.length}/2200
         </p>
       </div>
 
       {/* Hashtags */}
       <div className="mb-4">
-        <label className="block text-xs mb-2 tracking-wider"
-          style={{ color: 'rgba(224,224,255,0.5)', fontFamily: 'JetBrains Mono' }}>
-          <Hash size={12} className="inline mr-1" style={{ color: 'var(--neon-purple)' }} />HASHTAGS
+        <label className="block text-xs mb-2 tracking-wider font-mono"
+          style={{ color: 'var(--text-muted)' }}>
+          <Hash size={12} className="inline mr-1 text-accent-secondary" />HASHTAGS
         </label>
         <input
           value={hashtags} onChange={e => setHashtags(e.target.value)}
@@ -197,16 +196,16 @@ export default function PostCreator() {
 
       {/* Preview card */}
       {(caption || hashtags) && (
-        <div className="glass rounded-xl p-4 mb-4">
-          <p className="text-xs mb-1" style={{ color: 'rgba(224,224,255,0.4)', fontFamily: 'JetBrains Mono' }}>PREVIEW</p>
+        <div className="card-glass rounded-xl p-4 mb-4">
+          <p className="text-xs mb-2 font-mono" style={{ color: 'var(--text-muted)' }}>PREVIEW</p>
           <div className="flex items-center gap-2 mb-2">
             <img src={user?.avatar} className="w-7 h-7 rounded-full" />
-            <span className="text-sm font-semibold" style={{ color: '#e0e0ff' }}>{user?.username}</span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{user?.username}</span>
           </div>
-          <p className="text-sm" style={{ color: 'rgba(224,224,255,0.7)', lineHeight: 1.5 }}>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             {caption}
             {hashtags && (
-              <span style={{ color: 'var(--neon-cyan)' }}>
+              <span style={{ color: 'var(--accent-primary)' }}>
                 {' '}{hashtags.split(' ').map(t => t.startsWith('#') ? t : `#${t}`).join(' ')}
               </span>
             )}

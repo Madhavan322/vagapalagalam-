@@ -74,22 +74,22 @@ export default function PostCard({ post, onUpdate }) {
             />
           </div>
           <div>
-            <p className="text-sm font-semibold" style={{ color: '#e0e0ff' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               {post.users?.username}
             </p>
-            <p className="text-xs" style={{ color: 'rgba(224,224,255,0.4)', fontFamily: 'JetBrains Mono' }}>
+            <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
               {timeAgo}
             </p>
           </div>
         </div>
-        <button style={{ color: 'rgba(224,224,255,0.4)' }}>
+        <button style={{ color: 'var(--text-muted)' }}>
           <MoreHorizontal size={18} />
         </button>
       </div>
 
       {/* Caption */}
       {post.caption && (
-        <p className="px-4 pb-3 text-sm" style={{ color: 'rgba(224,224,255,0.8)', lineHeight: 1.5 }}>
+        <p className="px-4 pb-3 text-sm" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
           {post.caption}
         </p>
       )}
@@ -98,7 +98,7 @@ export default function PostCard({ post, onUpdate }) {
       {post.media_url && (
         <div className="relative">
           {post.type === 'video' ? (
-            <div className="relative" onClick={() => setVideoPlaying(!videoPlaying)}>
+            <div className="relative cursor-pointer" onClick={() => setVideoPlaying(!videoPlaying)}>
               <video
                 src={post.media_url}
                 className="w-full max-h-96 object-cover"
@@ -108,8 +108,8 @@ export default function PostCard({ post, onUpdate }) {
               />
               {!videoPlaying && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center glass glow-cyan">
-                    <Play size={24} style={{ color: 'var(--neon-cyan)' }} />
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center glass glow-purple">
+                    <Play size={24} style={{ color: 'var(--accent-primary)' }} />
                   </div>
                 </div>
               )}
@@ -142,12 +142,15 @@ export default function PostCard({ post, onUpdate }) {
               >
                 <Heart
                   size={20}
-                  fill={liked ? 'var(--neon-pink)' : 'none'}
-                  style={{ color: liked ? 'var(--neon-pink)' : 'rgba(224,224,255,0.5)', filter: liked ? 'drop-shadow(0 0 6px var(--neon-pink))' : 'none' }}
+                  fill={liked ? 'var(--accent-secondary)' : 'none'}
+                  style={{
+                    color: liked ? 'var(--accent-secondary)' : 'var(--text-muted)',
+                    filter: liked ? 'drop-shadow(0 0 8px var(--glow-secondary))' : 'none'
+                  }}
                 />
               </motion.div>
             </AnimatePresence>
-            <span className="text-xs" style={{ color: 'rgba(224,224,255,0.5)', fontFamily: 'JetBrains Mono' }}>
+            <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
               {likeCount}
             </span>
           </motion.button>
@@ -157,22 +160,25 @@ export default function PostCard({ post, onUpdate }) {
             onClick={() => setShowComments(s => !s)}
             className="flex items-center gap-1.5"
           >
-            <MessageCircle size={20} style={{ color: showComments ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.5)' }} />
-            <span className="text-xs" style={{ color: 'rgba(224,224,255,0.5)', fontFamily: 'JetBrains Mono' }}>
+            <MessageCircle size={20} style={{ color: showComments ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+            <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
               {comments.length}
             </span>
           </motion.button>
 
           <motion.button whileTap={{ scale: 0.9 }}>
-            <Share2 size={20} style={{ color: 'rgba(224,224,255,0.5)' }} />
+            <Share2 size={20} style={{ color: 'var(--text-muted)' }} />
           </motion.button>
         </div>
 
         <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave}>
           <Bookmark
             size={20}
-            fill={saved ? 'var(--neon-purple)' : 'none'}
-            style={{ color: saved ? 'var(--neon-purple)' : 'rgba(224,224,255,0.5)', filter: saved ? 'drop-shadow(0 0 6px var(--neon-purple))' : 'none' }}
+            fill={saved ? 'var(--accent-primary)' : 'none'}
+            style={{
+              color: saved ? 'var(--accent-primary)' : 'var(--text-muted)',
+              filter: saved ? 'drop-shadow(0 0 8px var(--glow-primary))' : 'none'
+            }}
           />
         </motion.button>
       </div>
@@ -185,11 +191,11 @@ export default function PostCard({ post, onUpdate }) {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="border-t overflow-hidden"
-            style={{ borderColor: 'rgba(0,245,255,0.08)' }}
+            style={{ borderColor: 'var(--border-subtle)' }}
           >
             <div className="p-4 space-y-3 max-h-48 overflow-y-auto">
               {comments.length === 0 && (
-                <p className="text-xs text-center py-2" style={{ color: 'rgba(224,224,255,0.3)' }}>
+                <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>
                   No comments yet. Be the first!
                 </p>
               )}
@@ -200,10 +206,10 @@ export default function PostCard({ post, onUpdate }) {
                     className="w-6 h-6 rounded-full flex-shrink-0"
                   />
                   <div>
-                    <span className="text-xs font-bold mr-2" style={{ color: 'var(--neon-cyan)' }}>
+                    <span className="text-xs font-bold mr-2" style={{ color: 'var(--accent-primary)' }}>
                       {c.users?.username}
                     </span>
-                    <span className="text-xs" style={{ color: 'rgba(224,224,255,0.7)' }}>{c.text}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{c.text}</span>
                   </div>
                 </div>
               ))}
@@ -215,7 +221,7 @@ export default function PostCard({ post, onUpdate }) {
                 className="cyber-input flex-1 px-3 py-2 text-xs"
                 placeholder="Add a comment..."
               />
-              <button type="submit" className="btn-primary px-3 py-2 text-xs">POST</button>
+              <button type="submit" className="btn-gradient px-4 py-2 text-xs rounded-lg font-semibold">POST</button>
             </form>
           </motion.div>
         )}

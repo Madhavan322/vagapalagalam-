@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Plus, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import PostCard from '../components/feed/PostCard'
@@ -10,6 +11,7 @@ const POSTS_PER_PAGE = 10
 
 export default function Home() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -22,15 +24,7 @@ export default function Home() {
       if (pageNum === 0) setLoading(true)
       else setLoadingMore(true)
 
-      // Get followed users
-      const { data: follows } = await supabase
-        .from('followers')
-        .select('following_id')
-        .eq('follower_id', user.id)
-      
-      const followIds = follows?.map(f => f.following_id) || []
-      followIds.push(user.id)
-
+      // Global feed — show ALL posts from ALL users
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -39,7 +33,6 @@ export default function Home() {
           likes(user_id),
           comments(id, text, user_id, created_at, users(username, avatar))
         `)
-        .in('user_id', followIds)
         .order('created_at', { ascending: false })
         .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1)
 
@@ -56,7 +49,7 @@ export default function Home() {
 
       setHasMore(enriched.length === POSTS_PER_PAGE)
     } catch (e) {
-      console.error(e)
+      console.error('Failed to fetch posts:', e)
     } finally {
       setLoading(false)
       setLoadingMore(false)
@@ -96,21 +89,24 @@ export default function Home() {
   return (
     <div className="relative z-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-sm font-bold tracking-widest gradient-text">
-          YOUR FEED
-        </h1>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-accent-primary" />
+          <h1 className="font-display text-sm font-bold tracking-widest text-gradient">
+            YOUR FEED
+          </h1>
+        </div>
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => fetchPosts(0)}
-          style={{ color: 'rgba(224,224,255,0.4)' }}
+          className="text-muted hover:text-accent-primary transition-colors"
         >
           <RefreshCw size={16} />
         </motion.button>
       </div>
 
       {/* Stories */}
-      <div className="glass rounded-2xl p-4 mb-4">
+      <div className="card-glass rounded-2xl p-4 mb-5">
         <Stories />
       </div>
 
@@ -118,7 +114,7 @@ export default function Home() {
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="post-card p-4 space-y-3">
+            <div key={i} className="card-glass rounded-2xl p-4 space-y-3">
               <div className="flex gap-3">
                 <div className="skeleton w-10 h-10 rounded-full" />
                 <div className="flex-1 space-y-2">
@@ -132,17 +128,25 @@ export default function Home() {
         </div>
       ) : posts.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="glass rounded-2xl p-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card-glass rounded-2xl p-12 text-center"
         >
-          <div className="text-4xl mb-4">🌌</div>
-          <h3 className="font-display text-xs tracking-wider mb-2" style={{ color: 'var(--neon-cyan)' }}>
-            THE VOID AWAITS
+          <div className="text-5xl mb-4">✨</div>
+          <h3 className="font-display text-sm tracking-wider mb-2 text-accent-primary font-bold">
+            BE THE FIRST
           </h3>
-          <p className="text-sm" style={{ color: 'rgba(224,224,255,0.4)' }}>
-            Follow some creators to fill your feed
+          <p className="text-sm text-muted mb-6">
+            No posts yet — create the first post and start the conversation!
           </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/create')}
+            className="btn-gradient px-6 py-3 rounded-xl inline-flex items-center gap-2 text-xs font-display tracking-wider font-bold"
+          >
+            <Plus size={16} /> CREATE POST
+          </motion.button>
         </motion.div>
       ) : (
         <>
@@ -154,13 +158,12 @@ export default function Home() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="w-6 h-6 rounded-full border-2"
-                style={{ borderColor: 'rgba(0,245,255,0.3)', borderTopColor: 'var(--neon-cyan)' }}
+                className="w-6 h-6 rounded-full border-2 border-accent-primary/30 border-t-accent-primary"
               />
             </div>
           )}
           {!hasMore && posts.length > 0 && (
-            <p className="text-center py-6 text-xs" style={{ color: 'rgba(224,224,255,0.2)', fontFamily: 'JetBrains Mono' }}>
+            <p className="text-center py-6 text-xs text-muted/50 font-mono">
               — END OF FEED —
             </p>
           )}

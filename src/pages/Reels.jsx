@@ -46,8 +46,9 @@ function ReelItem({ reel, isActive }) {
           muted={muted}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface to-panel">
-          <p className="text-2xl font-display font-bold gradient-text text-center px-8">{reel.caption}</p>
+        <div className="w-full h-full flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
+          <p className="text-2xl font-display font-bold text-gradient text-center px-8">{reel.caption}</p>
         </div>
       )}
 
@@ -61,8 +62,8 @@ function ReelItem({ reel, isActive }) {
           onClick={() => setMuted(m => !m)}
           className="w-9 h-9 rounded-full flex items-center justify-center glass"
         >
-          {muted ? <VolumeX size={16} style={{ color: 'var(--neon-cyan)' }} /> 
-                  : <Volume2 size={16} style={{ color: 'var(--neon-cyan)' }} />}
+          {muted ? <VolumeX size={16} style={{ color: 'var(--accent-primary)' }} /> 
+                  : <Volume2 size={16} style={{ color: 'var(--accent-primary)' }} />}
         </motion.button>
       </div>
 
@@ -72,7 +73,7 @@ function ReelItem({ reel, isActive }) {
           <img
             src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`}
             className="w-9 h-9 rounded-full border-2"
-            style={{ borderColor: 'var(--neon-cyan)' }}
+            style={{ borderColor: 'var(--accent-primary)' }}
           />
           <span className="font-semibold text-white text-sm">{reel.users?.username}</span>
         </div>
@@ -86,8 +87,8 @@ function ReelItem({ reel, isActive }) {
         <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
           <Heart
             size={26}
-            fill={liked ? 'var(--neon-pink)' : 'none'}
-            style={{ color: liked ? 'var(--neon-pink)' : 'white', filter: liked ? 'drop-shadow(0 0 8px var(--neon-pink))' : 'none' }}
+            fill={liked ? 'var(--accent-secondary)' : 'none'}
+            style={{ color: liked ? 'var(--accent-secondary)' : 'white', filter: liked ? 'drop-shadow(0 0 8px var(--glow-secondary))' : 'none' }}
           />
           <span className="text-white text-xs font-mono">{likeCount}</span>
         </motion.button>
@@ -142,8 +143,8 @@ export default function Reels() {
     return (
       <div className="h-screen flex items-center justify-center bg-void">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 rounded-full border-2"
-          style={{ borderColor: 'rgba(0,245,255,0.3)', borderTopColor: 'var(--neon-cyan)' }} />
+          className="w-8 h-8 rounded-full border-2 border-accent-primary/30"
+          style={{ borderTopColor: 'var(--accent-primary)' }} />
       </div>
     )
   }
@@ -158,20 +159,20 @@ export default function Reels() {
           onClick={() => navigate('/home')}
           className="w-9 h-9 rounded-full flex items-center justify-center glass"
         >
-          <ArrowLeft size={18} style={{ color: 'var(--neon-cyan)' }} />
+          <ArrowLeft size={18} style={{ color: 'var(--accent-primary)' }} />
         </motion.button>
       </div>
 
       {/* REELS label */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
-        <span className="font-display text-xs tracking-widest" style={{ color: 'var(--neon-cyan)' }}>REELS</span>
+        <span className="font-display text-xs tracking-widest text-accent-primary font-semibold">REELS</span>
       </div>
 
       {reels.length === 0 ? (
         <div className="h-screen flex flex-col items-center justify-center bg-void">
           <div className="text-5xl mb-4">🎬</div>
-          <h3 className="font-display text-xs tracking-wider mb-2" style={{ color: 'var(--neon-cyan)' }}>NO REELS YET</h3>
-          <p className="text-sm" style={{ color: 'rgba(224,224,255,0.4)' }}>Upload your first video reel</p>
+          <h3 className="font-display text-xs tracking-wider mb-2 text-accent-primary font-semibold">NO REELS YET</h3>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Upload your first video reel</p>
         </div>
       ) : (
         <div ref={containerRef} className="reel-container">

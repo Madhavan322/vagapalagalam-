@@ -23,7 +23,6 @@ export default function Layout() {
 
   useEffect(() => {
     if (!user) return
-    // Subscribe to new messages
     const msgSub = supabase.channel('messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
         () => setUnreadMessages(prev => prev + 1))
@@ -54,16 +53,17 @@ export default function Layout() {
       {/* Create button - floating */}
       {!isReels && (
         <motion.button
-          whileHover={{ scale: 1.1 }}
+          whileHover={{ scale: 1.1, rotate: 90 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate('/create')}
-          className="fixed bottom-28 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center"
+          className="fixed bottom-28 right-4 z-50 w-13 h-13 rounded-full flex items-center justify-center btn-gradient"
           style={{
-            background: 'linear-gradient(135deg, var(--neon-cyan), var(--neon-purple))',
-            boxShadow: '0 0 20px rgba(0,245,255,0.4)'
+            width: '52px',
+            height: '52px',
+            boxShadow: '0 4px 20px var(--glow-primary), 0 0 40px rgba(108,99,255,0.15)'
           }}
         >
-          <Plus size={22} className="text-void" />
+          <Plus size={22} className="text-white" />
         </motion.button>
       )}
 
@@ -90,21 +90,21 @@ export default function Layout() {
                   onClick={() => navigate(path)}
                   className="relative flex flex-col items-center p-2 rounded-xl transition-all duration-200 group"
                   style={{
-                    background: isActive ? 'rgba(0,245,255,0.1)' : 'transparent',
+                    background: isActive ? 'rgba(108,99,255,0.12)' : 'transparent',
                   }}
                 >
                   <Icon
                     size={20}
                     style={{
-                      color: isActive ? 'var(--neon-cyan)' : 'rgba(224,224,255,0.4)',
-                      filter: isActive ? 'drop-shadow(0 0 6px var(--neon-cyan))' : 'none',
+                      color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
+                      filter: isActive ? 'drop-shadow(0 0 8px var(--glow-primary))' : 'none',
                     }}
                   />
                   {isActive && (
                     <motion.div
                       layoutId="nav-indicator"
-                      className="absolute -bottom-1 w-1 h-1 rounded-full"
-                      style={{ background: 'var(--neon-cyan)', boxShadow: '0 0 6px var(--neon-cyan)' }}
+                      className="absolute -bottom-1 w-1.5 h-1.5 rounded-full"
+                      style={{ background: 'var(--accent-primary)', boxShadow: '0 0 8px var(--glow-primary)' }}
                     />
                   )}
                   {hasBadge && (

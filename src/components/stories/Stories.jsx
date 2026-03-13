@@ -61,18 +61,17 @@ export default function Stories() {
       >
         <div className="relative">
           <div className="w-16 h-16 rounded-full overflow-hidden"
-            style={{ background: 'rgba(0,245,255,0.05)', border: '2px dashed rgba(0,245,255,0.3)' }}>
+            style={{ background: 'rgba(108,99,255,0.05)', border: '2px dashed rgba(108,99,255,0.3)' }}>
             <img
               src={user?.avatar}
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, var(--neon-cyan), var(--neon-purple))' }}>
-            <Plus size={12} className="text-void" strokeWidth={3} />
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center btn-gradient">
+            <Plus size={12} className="text-white" strokeWidth={3} />
           </div>
         </div>
-        <span className="text-xs" style={{ color: 'rgba(224,224,255,0.5)', fontFamily: 'JetBrains Mono', fontSize: '0.6rem' }}>
+        <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>
           Your Story
         </span>
       </motion.div>
@@ -97,7 +96,7 @@ export default function Stories() {
               />
             </div>
           </div>
-          <span className="text-xs" style={{ color: 'rgba(224,224,255,0.6)', fontSize: '0.65rem' }}>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
             {s.username?.slice(0, 8)}
           </span>
         </motion.div>

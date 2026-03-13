@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { formatDistanceToNow } from 'date-fns'
 
-const STORY_DURATION = 5000 // ms per story
+const STORY_DURATION = 5000
 
 export default function StoryViewer() {
   const { userId } = useParams()
@@ -35,7 +35,6 @@ export default function StoryViewer() {
     setLoading(false)
   }
 
-  // Progress timer
   useEffect(() => {
     if (!stories.length || loading) return
     startTimer()
@@ -82,15 +81,15 @@ export default function StoryViewer() {
   if (loading) return (
     <div className="fixed inset-0 bg-void flex items-center justify-center z-50">
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className="w-8 h-8 rounded-full border-2"
-        style={{ borderColor: 'rgba(0,245,255,0.3)', borderTopColor: 'var(--neon-cyan)' }} />
+        className="w-8 h-8 rounded-full border-2 border-accent-primary/30"
+        style={{ borderTopColor: 'var(--accent-primary)' }} />
     </div>
   )
 
   if (!stories.length) return (
     <div className="fixed inset-0 bg-void flex flex-col items-center justify-center z-50">
-      <p className="text-lg mb-4" style={{ color: 'rgba(224,224,255,0.5)' }}>No active stories</p>
-      <button onClick={() => navigate(-1)} className="btn-primary">GO BACK</button>
+      <p className="text-lg mb-4" style={{ color: 'var(--text-secondary)' }}>No active stories</p>
+      <button onClick={() => navigate(-1)} className="btn-gradient px-6 py-3 rounded-xl font-semibold text-sm">GO BACK</button>
     </div>
   )
 
@@ -99,7 +98,6 @@ export default function StoryViewer() {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-      {/* Story background / media */}
       <div className="relative w-full max-w-sm h-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div key={index} initial={{ opacity: 0, scale: 1.05 }}
@@ -111,8 +109,8 @@ export default function StoryViewer() {
                 : <img src={story.media_url} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, var(--surface), var(--panel))' }}>
-                <p className="font-display text-2xl font-bold gradient-text text-center px-8">
+                style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
+                <p className="font-display text-2xl font-bold text-gradient text-center px-8">
                   {story?.caption || ''}
                 </p>
               </div>
@@ -143,7 +141,7 @@ export default function StoryViewer() {
             </div>
             <div>
               <p className="font-semibold text-sm text-white">{user?.username}</p>
-              <p className="text-xs text-white/50" style={{ fontFamily: 'JetBrains Mono' }}>
+              <p className="text-xs text-white/50 font-mono">
                 {formatDistanceToNow(new Date(story.created_at), { addSuffix: true })}
               </p>
             </div>
@@ -168,13 +166,13 @@ export default function StoryViewer() {
         {index > 0 && (
           <button onClick={goPrev}
             className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full flex items-center justify-center glass">
-            <ChevronLeft size={18} style={{ color: 'var(--neon-cyan)' }} />
+            <ChevronLeft size={18} style={{ color: 'var(--accent-primary)' }} />
           </button>
         )}
         {index < stories.length - 1 && (
           <button onClick={goNext}
             className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full flex items-center justify-center glass">
-            <ChevronRight size={18} style={{ color: 'var(--neon-cyan)' }} />
+            <ChevronRight size={18} style={{ color: 'var(--accent-primary)' }} />
           </button>
         )}
       </div>
