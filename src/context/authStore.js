@@ -8,15 +8,27 @@ export const useAuthStore = create(
       user: null,
       session: null,
       loading: true,
+      initialized: false,
 
       setUser: (user) => set({ user }),
       setSession: (session) => set({ session }),
       setLoading: (loading) => set({ loading }),
 
       initialize: async () => {
+        if (get().initialized) return
+        set({ initialized: true, loading: true })
+        
+        const timeoutInfo = setTimeout(() => {
+          if (get().loading) {
+            console.warn('Auth initialization timed out. Forcing UI unblock.')
+            set({ loading: false })
+          }
+        }, 3000)
+
         try {
-          set({ loading: true })
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session }, error } = await supabase.auth.getSession()
+          if (error) throw error
+
           if (session) {
             const user = await getCurrentUser()
             set({ session, user, loading: false })
@@ -26,6 +38,8 @@ export const useAuthStore = create(
         } catch (error) {
           console.error('Auth initialization failed:', error)
           set({ session: null, user: null, loading: false })
+        } finally {
+          clearTimeout(timeoutInfo)
         }
       },
 
