@@ -137,7 +137,15 @@ export default function Profile() {
 
   if (!profile) return (
     <div className="relative z-10 card-glass rounded-2xl p-12 text-center">
-      <p style={{ color: 'var(--text-muted)' }}>User not found</p>
+      {loading || !targetId ? (
+        <div className="flex flex-col items-center gap-4">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="w-8 h-8 rounded-full border-2 border-accent-primary/30 border-t-accent-primary" />
+          <p style={{ color: 'var(--text-muted)' }}>Synchronizing profile...</p>
+        </div>
+      ) : (
+        <p style={{ color: 'var(--text-muted)' }}>User not found</p>
+      )}
     </div>
   )
 
