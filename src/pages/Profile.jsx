@@ -274,6 +274,7 @@ export default function Profile() {
         <div className="explore-grid gap-0.5">
           {displayItems.map((item, i) => (
             <motion.div key={item.id}
+              onClick={() => navigate(item.type === 'video' ? `/reels/${item.id}` : `/post/${item.id}`)}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.04 }}
               className="relative aspect-square overflow-hidden group cursor-pointer"
