@@ -18,10 +18,19 @@ import Layout from './components/layout/Layout'
 import LoadingScreen from './components/ui/LoadingScreen'
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuthStore()
+  const { session, user, loading } = useAuthStore()
   const location = useLocation()
+  
   if (loading) return <LoadingScreen />
-  if (!user) return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />
+  
+  // If we have a session but no user object yet, it might be fetching the profile
+  // but if loading is false and user is still null, we have an issue
+  if (!session) return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />
+  
+  // Optional: If session exists but user doesn't after loading, we might want to allow it
+  // or handle as a partial state. For now, if loading is false and user is null, 
+  // we redirect if there's no session at all.
+  
   return children
 }
 

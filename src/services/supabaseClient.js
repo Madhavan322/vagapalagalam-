@@ -79,10 +79,23 @@ export const signOut = async () => {
 }
 
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data } = await supabase.from('users').select('*').eq('id', user.id).single()
-  return data
+  try {
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 10000)
+    if (userError || !user) return null
+
+    const { data, error } = await withTimeout(
+      supabase.from('users').select('*').eq('id', user.id).single(),
+      10000
+    )
+    if (error) {
+      console.warn('Profile fetch failed, using auth user data fallback:', error)
+      return { id: user.id, email: user.email, username: user.user_metadata?.username || user.email.split('@')[0] }
+    }
+    return data
+  } catch (error) {
+    console.error('getCurrentUser failed:', error)
+    return null
+  }
 }
 
 // Upload helpers

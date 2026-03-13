@@ -59,15 +59,22 @@ export const useAuthStore = create(
 // Listen to auth changes
 supabase.auth.onAuthStateChange(async (event, session) => {
   const store = useAuthStore.getState()
+  
   if (event === 'SIGNED_IN' && session) {
+    store.setLoading(true)
     store.setSession(session)
     try {
       const user = await getCurrentUser()
       store.setUser(user)
     } catch (error) {
       console.error('Failed to fetch user on auth change:', error)
+    } finally {
+      store.setLoading(false)
     }
   } else if (event === 'SIGNED_OUT') {
     store.logout()
+    store.setLoading(false)
+  } else if (event === 'INITIAL_SESSION') {
+    // Already handled by manual initialize()
   }
 })
