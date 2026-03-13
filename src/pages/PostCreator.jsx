@@ -10,6 +10,7 @@ const POST_TYPES = [
   { id: 'image',  icon: Image,  label: 'PHOTO',  accept: 'image/*' },
   { id: 'video',  icon: Video,  label: 'VIDEO',  accept: 'video/*' },
   { id: 'story',  icon: Clock,  label: 'STORY',  accept: 'image/*,video/*' },
+  { id: 'text',   icon: Hash,   label: 'THOUGHT', accept: null },
 ]
 
 export default function PostCreator() {

@@ -23,17 +23,22 @@ export default function Auth() {
         if (form.username.length < 3) return toast.error('Username too short')
         await signUp(form.email, form.password, form.username)
         toast.success('Account created! Welcome to Vangapalagalam')
-        navigate(redirect)
       } else {
         await signIn(form.email, form.password)
         toast.success('Welcome back!')
-        navigate(redirect)
       }
+      
+      // Give a tiny moment for auth state to propagate through Supabase listeners
+      // then navigate. App.jsx ProtectedRoute will handle the loading screen.
+      setTimeout(() => {
+        navigate(redirect, { replace: true })
+      }, 500)
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
-    } finally {
       setLoading(false)
     }
+    // Note: setLoading(false) in finally can cause a flicker if navigation is slow,
+    // but the store initialization handles the global loading state.
   }
 
   return (
