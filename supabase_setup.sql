@@ -74,6 +74,21 @@ create table if not exists public.messages (
 -- ROW LEVEL SECURITY (RLS)
 -- =====================================================
 
+-- Function to handle new user signup
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, username, avatar)
+  values (new.id, new.email, new.raw_user_meta_data->>'username', 'https://api.dicebear.com/8.x/identicon/svg?seed=' || (new.raw_user_meta_data->>'username') || '&backgroundColor=040408&radius=50');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to create user profile on signup
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
 alter table public.users     enable row level security;
 alter table public.posts     enable row level security;
 alter table public.stories   enable row level security;

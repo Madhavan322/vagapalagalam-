@@ -18,19 +18,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Auth helpers
 export const signUp = async (email, password, username) => {
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      data: { username }
+    }
+  })
   if (error) throw error
-  if (data.user) {
-    const { error: profileError } = await supabase.from('users').insert({
-      id: data.user.id,
-      email,
-      username,
-      avatar: `https://api.dicebear.com/8.x/identicon/svg?seed=${username}&backgroundColor=040408&radius=50`,
-      bio: '',
-      created_at: new Date().toISOString()
-    })
-    if (profileError) throw profileError
-  }
+  // Profile will be created automatically by trigger
   return data
 }
 
