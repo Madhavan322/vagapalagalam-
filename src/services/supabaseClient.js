@@ -16,22 +16,33 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+const withTimeout = (promise, ms = 8000, errorMsg = 'Connection timed out. Please try again.') => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+  ])
+}
+
 // Auth helpers
 export const signUp = async (email, password, username) => {
-  const { data, error } = await supabase.auth.signUp({ 
-    email, 
-    password,
-    options: {
-      data: { username }
-    }
-  })
+  const { data, error } = await withTimeout(
+    supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: { username }
+      }
+    })
+  )
   if (error) throw error
   // Profile will be created automatically by trigger
   return data
 }
 
 export const signIn = async (email, password) => {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await withTimeout(
+    supabase.auth.signInWithPassword({ email, password })
+  )
   if (error) throw error
   return data
 }
