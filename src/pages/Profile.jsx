@@ -280,7 +280,7 @@ export default function Profile() {
               style={{ background: 'var(--bg-card)' }}>
               {item.media_url ? (
                 item.type === 'video'
-                  ? <video src={item.media_url} className="w-full h-full object-cover" />
+                  ? <video src={item.media_url} preload="metadata" className="w-full h-full object-cover" />
                   : <img src={item.media_url} className="w-full h-full object-cover" loading="lazy" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center p-3"

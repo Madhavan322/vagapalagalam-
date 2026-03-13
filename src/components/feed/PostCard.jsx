@@ -52,6 +52,13 @@ export default function PostCard({ post, onUpdate }) {
     await supabase.from('comments').insert({ user_id: user.id, post_id: post.id, text: comment })
   }
 
+  const handleShare = () => {
+    const isReel = post.type === 'video'
+    const url = `${window.location.origin}/${isReel ? 'reels' : 'post'}/${post.id}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link copied to clipboard!')
+  }
+
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
 
   return (
@@ -104,6 +111,7 @@ export default function PostCard({ post, onUpdate }) {
                 className="w-full max-h-96 object-cover"
                 loop
                 playsInline
+                preload="metadata"
                 ref={el => el && (videoPlaying ? el.play() : el.pause())}
               />
               {!videoPlaying && (
@@ -166,7 +174,7 @@ export default function PostCard({ post, onUpdate }) {
             </span>
           </motion.button>
 
-          <motion.button whileTap={{ scale: 0.9 }}>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={handleShare}>
             <Share2 size={20} style={{ color: 'var(--text-muted)' }} />
           </motion.button>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './context/authStore'
 
@@ -19,8 +19,9 @@ import LoadingScreen from './components/ui/LoadingScreen'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuthStore()
+  const location = useLocation()
   if (loading) return <LoadingScreen />
-  if (!user) return <Navigate to="/auth" replace />
+  if (!user) return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />
   return children
 }
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/reels" element={<Reels />} />
+          <Route path="/reels/:reelId" element={<Reels />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:userId" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />

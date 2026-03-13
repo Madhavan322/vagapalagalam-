@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 
@@ -33,6 +34,12 @@ function ReelItem({ reel, isActive }) {
     }
   }
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/reels/${reel.id}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link copied to clipboard!')
+  }
+
   return (
     <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden">
       {/* Video */}
@@ -44,6 +51,7 @@ function ReelItem({ reel, isActive }) {
           loop
           playsInline
           muted={muted}
+          preload="metadata"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center"
@@ -96,7 +104,7 @@ function ReelItem({ reel, isActive }) {
           <MessageCircle size={26} className="text-white" />
           <span className="text-white text-xs font-mono">{reel.comments?.length || 0}</span>
         </motion.button>
-        <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
+        <motion.button whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center gap-1">
           <Share2 size={26} className="text-white" />
           <span className="text-white text-xs font-mono">Share</span>
         </motion.button>
@@ -107,6 +115,7 @@ function ReelItem({ reel, isActive }) {
 
 export default function Reels() {
   const navigate = useNavigate()
+  const { reelId } = useParams()
   const [reels, setReels] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -117,6 +126,16 @@ export default function Reels() {
   }, [])
 
   const fetchReels = async () => {
+    let specificReel = null
+    if (reelId) {
+      const { data } = await supabase
+        .from('posts')
+        .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
+        .eq('id', reelId)
+        .single()
+      if (data) specificReel = data
+    }
+
     const { data } = await supabase
       .from('posts')
       .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
@@ -124,7 +143,12 @@ export default function Reels() {
       .order('created_at', { ascending: false })
       .limit(20)
     
-    setReels(data || [])
+    let fetchedReels = data || []
+    if (specificReel) {
+      fetchedReels = [specificReel, ...fetchedReels.filter(r => r.id !== specificReel.id)]
+    }
+
+    setReels(fetchedReels)
     setLoading(false)
   }
 

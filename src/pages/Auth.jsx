@@ -12,6 +12,7 @@ export default function Auth() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', username: '' })
+  const redirect = params.get('redirect') || '/home'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -22,11 +23,11 @@ export default function Auth() {
         if (form.username.length < 3) return toast.error('Username too short')
         await signUp(form.email, form.password, form.username)
         toast.success('Account created! Welcome to Vangapalagalam')
-        navigate('/home')
+        navigate(redirect)
       } else {
         await signIn(form.email, form.password)
         toast.success('Welcome back!')
-        navigate('/home')
+        navigate(redirect)
       }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')

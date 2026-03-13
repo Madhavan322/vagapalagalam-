@@ -218,7 +218,7 @@ export default function Explore() {
               >
                 {p.media_url ? (
                   p.type === 'video' ? (
-                    <video src={p.media_url} className="w-full h-full object-cover" />
+                    <video src={p.media_url} preload="metadata" className="w-full h-full object-cover" />
                   ) : (
                     <img src={p.media_url} className="w-full h-full object-cover" loading="lazy" />
                   )

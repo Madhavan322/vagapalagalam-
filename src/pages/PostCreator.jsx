@@ -132,7 +132,7 @@ export default function PostCreator() {
               <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="relative rounded-xl overflow-hidden" style={{ maxHeight: '320px' }}>
                 {postType === 'video' || file?.type?.startsWith('video')
-                  ? <video src={preview} controls className="w-full rounded-xl object-contain" style={{ maxHeight: '320px', background: 'black' }} />
+                  ? <video src={preview} controls preload="metadata" className="w-full rounded-xl object-contain" style={{ maxHeight: '320px', background: 'black' }} />
                   : <img src={preview} className="w-full rounded-xl object-cover" style={{ maxHeight: '320px' }} />
                 }
                 <button onClick={clearFile}
