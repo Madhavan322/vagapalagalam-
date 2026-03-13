@@ -19,7 +19,11 @@ export default function Home() {
   const [page, setPage] = useState(0)
 
   const fetchPosts = useCallback(async (pageNum = 0, append = false) => {
-    if (!user) return
+    // We need at least a session to know we're allowed to fetch, 
+    // but the user object (profile) might load a split second later.
+    const { session, user: authUser } = useAuthStore.getState()
+    if (!session) return
+    
     try {
       if (pageNum === 0) setLoading(true)
       else setLoadingMore(true)

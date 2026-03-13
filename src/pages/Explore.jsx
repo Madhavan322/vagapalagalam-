@@ -194,17 +194,25 @@ export default function Explore() {
           <h3 className="font-display text-xs tracking-wider mb-3 text-accent-primary font-semibold">USERS</h3>
           <div className="space-y-3">
             {users.map(u => (
-              <div
-                key={u.id}
-                onClick={() => navigate(`/profile/${u.id}`)}
-                className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                <img src={u.avatar} className="w-10 h-10 rounded-full object-cover avatar-ring" />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{u.username}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.bio}</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => navigate(`/profile/${u.id}`)}
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                  >
+                    <img src={u.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${u.username}`} className="w-10 h-10 rounded-full object-cover avatar-ring" />
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{u.username}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.bio}</p>
+                    </div>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/messages/${u.id}`) }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-display tracking-wider border border-subtle text-muted hover:text-accent-primary transition-colors"
+                  >
+                    MESSAGE
+                  </motion.button>
                 </div>
-              </div>
             ))}
           </div>
         </div>

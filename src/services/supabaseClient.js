@@ -17,13 +17,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
+  });
+
   return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      const timer = setTimeout(() => reject(new Error(errorMsg)), ms);
-      promise.finally(() => clearTimeout(timer));
-    })
-  ])
+    promise.then(result => {
+      clearTimeout(timeoutId);
+      return result;
+    }).catch(err => {
+      clearTimeout(timeoutId);
+      throw err;
+    }),
+    timeoutPromise
+  ]);
 }
 
 // Auth helpers
@@ -80,20 +88,40 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 10000)
-    if (userError || !user) return null
-
-    const { data, error } = await withTimeout(
-      supabase.from('users').select('*').eq('id', user.id).single(),
-      10000
-    )
-    if (error) {
-      console.warn('Profile fetch failed, using auth user data fallback:', error)
-      return { id: user.id, email: user.email, username: user.user_metadata?.username || user.email.split('@')[0] }
+    // 1. Get the auth user first
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 12000)
+    if (userError || !user) {
+      console.error('Auth getUser failed or no user:', userError)
+      return null
     }
-    return data
+
+    // 2. Try to get the profile from the 'users' table
+    try {
+      const { data, error } = await withTimeout(
+        supabase.from('users').select('*').eq('id', user.id).single(),
+        10000
+      )
+      
+      if (error) {
+        console.warn('Profile fetch from DB failed, using metadata fallback:', error)
+        return { 
+          id: user.id, 
+          email: user.email, 
+          username: user.user_metadata?.username || user.email.split('@')[0],
+          avatar: user.user_metadata?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.id}`
+        }
+      }
+      return data
+    } catch (dbErr) {
+      console.warn('DB error in getCurrentUser, using meta fallback:', dbErr)
+      return { 
+        id: user.id, 
+        email: user.email, 
+        username: user.user_metadata?.username || user.email.split('@')[0]
+      }
+    }
   } catch (error) {
-    console.error('getCurrentUser failed:', error)
+    console.error('getCurrentUser critical failure:', error)
     return null
   }
 }
