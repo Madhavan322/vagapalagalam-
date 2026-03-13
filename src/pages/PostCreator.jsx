@@ -43,7 +43,11 @@ export default function PostCreator() {
   }
 
   const handleSubmit = async () => {
-    if (!caption.trim() && !file) {
+    if (!user) {
+      toast.error('User profile not ready. Please try again.')
+      return
+    }
+    if (!caption.trim() && !file && postType !== 'text') {
       toast.error('Add a caption or media!')
       return
     }

@@ -33,6 +33,10 @@ export default function Notifications() {
   useEffect(() => { fetchNotifs() }, [])
 
   const fetchNotifs = async () => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const { data: follows } = await supabase

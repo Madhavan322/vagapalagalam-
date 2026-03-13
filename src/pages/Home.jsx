@@ -45,7 +45,7 @@ export default function Home() {
       const enriched = data?.map(p => ({
         ...p,
         like_count: p.likes?.length || 0,
-        user_liked: p.likes?.some(l => l.user_id === user.id) || false,
+        user_liked: p.likes?.some(l => l.user_id === user?.id) || false,
       })) || []
 
       if (append) setPosts(prev => [...prev, ...enriched])

@@ -52,11 +52,15 @@ export default function Explore() {
       const followIds = follows?.map(f => f.following_id) || []
       followIds.push(user.id)
 
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .not('id', 'in', `(${followIds.join(',')})`)
-        .limit(5)
+      let query = supabase.from('users').select('*')
+      
+      if (followIds.length > 0) {
+        query = query.not('id', 'in', `(${followIds.join(',')})`)
+      } else {
+        query = query.neq('id', user.id)
+      }
+
+      const { data } = await query.limit(5)
       setSuggestions(data || [])
     } catch (e) {
       console.error('Failed to fetch suggestions:', e)
