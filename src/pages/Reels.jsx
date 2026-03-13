@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, ArrowLeft, Play } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { supabase } from '../services/supabaseClient'
@@ -13,15 +13,29 @@ function ReelItem({ reel, isActive }) {
   const [liked, setLiked] = useState(reel.user_liked || false)
   const [likeCount, setLikeCount] = useState(reel.like_count || 0)
   const [showComments, setShowComments] = useState(false)
+  const [playing, setPlaying] = useState(isActive)
 
   useEffect(() => {
     if (!videoRef.current) return
     if (isActive) {
       videoRef.current.play().catch(() => {})
+      setPlaying(true)
     } else {
       videoRef.current.pause()
+      setPlaying(false)
     }
   }, [isActive])
+
+  const togglePlay = () => {
+    if (!videoRef.current) return
+    if (playing) {
+      videoRef.current.pause()
+      setPlaying(false)
+    } else {
+      videoRef.current.play().catch(() => {})
+      setPlaying(true)
+    }
+  }
 
   const handleLike = async () => {
     const newLiked = !liked
@@ -41,7 +55,7 @@ function ReelItem({ reel, isActive }) {
   }
 
   return (
-    <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden">
+    <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden" onClick={togglePlay}>
       {/* Video */}
       {reel.media_url ? (
         <video
@@ -57,6 +71,15 @@ function ReelItem({ reel, isActive }) {
         <div className="w-full h-full flex items-center justify-center"
           style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
           <p className="text-2xl font-display font-bold text-gradient text-center px-8">{reel.caption}</p>
+        </div>
+      )}
+
+      {/* Play/Pause Overlay */}
+      {!playing && reel.media_url && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none z-20">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center glass glow-purple">
+            <Play size={32} style={{ color: 'var(--accent-primary)', marginLeft: '4px' }} />
+          </div>
         </div>
       )}
 
@@ -91,7 +114,7 @@ function ReelItem({ reel, isActive }) {
       </div>
 
       {/* Side actions */}
-      <div className="absolute right-4 bottom-28 flex flex-col gap-6 items-center z-10">
+      <div className="absolute right-4 bottom-28 flex flex-col gap-6 items-center z-30" onClick={e => e.stopPropagation()}>
         <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
           <Heart
             size={26}

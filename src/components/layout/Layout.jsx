@@ -31,7 +31,7 @@ export default function Layout() {
     return () => { supabase.removeChannel(msgSub) }
   }, [user])
 
-  const isReels = location.pathname === '/reels'
+  const isReels = location.pathname.startsWith('/reels')
 
   return (
     <div className="min-h-screen bg-void bg-grid relative">
