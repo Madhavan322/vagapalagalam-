@@ -16,35 +16,61 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-const withTimeout = (promise, ms = 8000, errorMsg = 'Connection timed out. Please try again.') => {
+const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+    new Promise((_, reject) => {
+      const timer = setTimeout(() => reject(new Error(errorMsg)), ms);
+      promise.finally(() => clearTimeout(timer));
+    })
   ])
 }
 
 // Auth helpers
 export const signUp = async (email, password, username) => {
-  const { data, error } = await withTimeout(
-    supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        data: { username }
-      }
-    })
-  )
-  if (error) throw error
-  // Profile will be created automatically by trigger
-  return data
+  console.log('Attempting to create account for:', email)
+  try {
+    const { data, error } = await withTimeout(
+      supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: { username }
+        }
+      }),
+      25000,
+      'Account creation timed out. Your connection might be slow or Supabase is busy. Please try again.'
+    )
+    if (error) {
+      console.error('Supabase Sign Up Error:', error)
+      throw error
+    }
+    console.log('Account created successfully!')
+    return data
+  } catch (error) {
+    console.error('Sign Up failed:', error)
+    throw error
+  }
 }
 
 export const signIn = async (email, password) => {
-  const { data, error } = await withTimeout(
-    supabase.auth.signInWithPassword({ email, password })
-  )
-  if (error) throw error
-  return data
+  console.log('Attempting sign in for:', email)
+  try {
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithPassword({ email, password }),
+      20000,
+      'Login timed out. Please check your internet connection and try again.'
+    )
+    if (error) {
+      console.error('Supabase Sign In Error:', error)
+      throw error
+    }
+    console.log('Signed in successfully!')
+    return data
+  } catch (error) {
+    console.error('Sign In failed:', error)
+    throw error
+  }
 }
 
 export const signOut = async () => {
