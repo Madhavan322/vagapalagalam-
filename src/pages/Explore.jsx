@@ -124,19 +124,33 @@ export default function Explore() {
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.bio?.slice(0, 30) || 'No bio yet'}</p>
                   </div>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleFollow(u.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all"
-                  style={{
-                    background: following[u.id] ? 'rgba(16,185,129,0.1)' : 'rgba(108,99,255,0.1)',
-                    border: `1px solid ${following[u.id] ? 'rgba(16,185,129,0.3)' : 'rgba(108,99,255,0.3)'}`,
-                    color: following[u.id] ? 'var(--accent-success)' : 'var(--accent-primary)',
-                  }}
-                >
-                  {following[u.id] ? <Check size={12} /> : <UserPlus size={12} />}
-                  {following[u.id] ? 'FOLLOWING' : 'FOLLOW'}
-                </motion.button>
+                <div className="flex flex-col gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleFollow(u.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all"
+                    style={{
+                      background: following[u.id] ? 'rgba(16,185,129,0.1)' : 'rgba(108,99,255,0.1)',
+                      border: `1px solid ${following[u.id] ? 'rgba(16,185,129,0.3)' : 'rgba(108,99,255,0.3)'}`,
+                      color: following[u.id] ? 'var(--accent-success)' : 'var(--accent-primary)',
+                    }}
+                  >
+                    {following[u.id] ? <Check size={12} /> : <UserPlus size={12} />}
+                    {following[u.id] ? 'FOLLOWING' : 'FOLLOW'}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => navigate(`/messages/${u.id}`)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    MESSAGE
+                  </motion.button>
+                </div>
               </div>
             ))}
           </div>
