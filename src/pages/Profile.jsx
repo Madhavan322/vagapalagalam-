@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Grid, Play, Settings, UserPlus, UserMinus, MessageSquare, Edit3, Camera } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, uploadMedia } from '../services/supabaseClient'
+import { supabase, uploadMedia, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import toast from 'react-hot-toast'
 
@@ -30,41 +30,60 @@ export default function Profile() {
   }, [targetId])
 
   const fetchProfile = async () => {
+    if (!targetId) return
     setLoading(true)
     try {
-      // Profile
-      const { data: prof } = await supabase.from('users').select('*').eq('id', targetId).single()
-      setProfile(prof)
-      setEditForm({ username: prof?.username || '', bio: prof?.bio || '' })
+      // 1. Fetch Profile with Timeout
+      const { data: prof, error: profError } = await withTimeout(
+        supabase.from('users').select('*').eq('id', targetId).single(),
+        10000
+      ).catch(err => ({ data: null, error: err }))
 
-      // Image Posts
-      const { data: postsData } = await supabase
-        .from('posts').select('id, media_url, type, caption')
-        .eq('user_id', targetId).eq('type', 'image').order('created_at', { ascending: false })
-      setPosts(postsData || [])
+      if (profError || !prof) {
+        if (isOwn && user) {
+          setProfile(user)
+          setEditForm({ username: user.username || '', bio: user.bio || '' })
+        } else {
+          setProfile(null)
+        }
+      } else {
+        setProfile(prof)
+        setEditForm({ username: prof.username || '', bio: prof.bio || '' })
+      }
 
-      // Video Reels
-      const { data: reelsData } = await supabase
-        .from('posts').select('id, media_url, type, caption')
-        .eq('user_id', targetId).eq('type', 'video').order('created_at', { ascending: false })
-      setReels(reelsData || [])
+      // 2. Fetch Media & Counts in parallel (each with its own timeout)
+      const fetchMedia = async () => {
+        const [postsRes, reelsRes, statsRes] = await Promise.all([
+          withTimeout(supabase.from('posts').select('id, media_url, type, caption').eq('user_id', targetId).eq('type', 'image').order('created_at', { ascending: false }), 8000),
+          withTimeout(supabase.from('posts').select('id, media_url, type, caption').eq('user_id', targetId).eq('type', 'video').order('created_at', { ascending: false }), 8000),
+          Promise.all([
+            withTimeout(supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', targetId), 5000),
+            withTimeout(supabase.from('followers').select('*', { count: 'exact', head: true }).eq('following_id', targetId), 5000),
+            withTimeout(supabase.from('followers').select('*', { count: 'exact', head: true }).eq('follower_id', targetId), 5000),
+          ])
+        ]).catch(() => [[], [], [{}, {}, {}]])
 
-      // Counts
-      const [{ count: postsCount }, { count: followersCount }, { count: followingCount }] = await Promise.all([
-        supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', targetId),
-        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('following_id', targetId),
-        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('follower_id', targetId),
-      ])
-      setCounts({ posts: postsCount || 0, followers: followersCount || 0, following: followingCount || 0 })
+        setPosts(postsRes.data || [])
+        setReels(reelsRes.data || [])
+        setCounts({ 
+          posts: statsRes[0]?.count || 0, 
+          followers: statsRes[1]?.count || 0, 
+          following: statsRes[2]?.count || 0 
+        })
+      }
 
-      // Am I following?
+      await fetchMedia()
+
+      // 3. Follow status
       if (!isOwn && user) {
-        const { data: f } = await supabase.from('followers')
-          .select('id').eq('follower_id', user.id).eq('following_id', targetId).maybeSingle()
+        const { data: f } = await withTimeout(
+          supabase.from('followers').select('id').eq('follower_id', user.id).eq('following_id', targetId).maybeSingle(),
+          5000
+        ).catch(() => ({ data: null }))
         setFollowing(!!f)
       }
     } catch (e) {
-      console.error(e)
+      console.error('Profile fetch failed:', e)
     } finally {
       setLoading(false)
     }

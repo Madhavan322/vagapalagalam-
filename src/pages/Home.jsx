@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, Plus, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../services/supabaseClient'
+import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import PostCard from '../components/feed/PostCard'
 import Stories from '../components/stories/Stories'
+import toast from 'react-hot-toast'
 
 const POSTS_PER_PAGE = 10
 
@@ -29,16 +30,19 @@ export default function Home() {
       else setLoadingMore(true)
 
       // Global feed — show ALL posts from ALL users
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          users(id, username, avatar),
-          likes(user_id),
-          comments(id, text, user_id, created_at, users(username, avatar))
-        `)
-        .order('created_at', { ascending: false })
-        .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1)
+      const { data, error } = await withTimeout(
+        supabase
+          .from('posts')
+          .select(`
+            *,
+            users(id, username, avatar),
+            likes(user_id),
+            comments(id, text, user_id, created_at, users(username, avatar))
+          `)
+          .order('created_at', { ascending: false })
+          .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1),
+        10000
+      ).catch(err => ({ data: [], error: err }))
 
       if (error) throw error
 

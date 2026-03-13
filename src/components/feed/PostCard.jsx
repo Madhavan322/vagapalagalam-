@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Play } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../services/supabaseClient'
+import { supabase, withTimeout } from '../../services/supabaseClient'
 import { useAuthStore } from '../../context/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -24,10 +24,14 @@ export default function PostCard({ post, onUpdate }) {
     setLiked(newLiked)
     setLikeCount(c => c + (newLiked ? 1 : -1))
 
-    if (newLiked) {
-      await supabase.from('likes').insert({ user_id: user.id, post_id: post.id })
-    } else {
-      await supabase.from('likes').delete().match({ user_id: user.id, post_id: post.id })
+    try {
+      if (newLiked) {
+        await withTimeout(supabase.from('likes').insert({ user_id: user.id, post_id: post.id }), 5000)
+      } else {
+        await withTimeout(supabase.from('likes').delete().match({ user_id: user.id, post_id: post.id }), 5000)
+      }
+    } catch (e) {
+      console.error('Like failed:', e)
     }
   }
 
@@ -38,25 +42,34 @@ export default function PostCard({ post, onUpdate }) {
 
   const handleComment = async (e) => {
     e.preventDefault()
-    if (!comment.trim()) return
+    if (!comment.trim() || !user) return
+    const text = comment
     const newComment = {
       id: Date.now(),
       user_id: user.id,
       post_id: post.id,
-      text: comment,
+      text: text,
       created_at: new Date().toISOString(),
       users: { username: user.username, avatar: user.avatar }
     }
     setComments(c => [...c, newComment])
     setComment('')
-    await supabase.from('comments').insert({ user_id: user.id, post_id: post.id, text: comment })
+    try {
+      await withTimeout(supabase.from('comments').insert({ user_id: user.id, post_id: post.id, text }), 5000)
+    } catch (e) {
+      console.error('Comment failed:', e)
+    }
   }
 
   const handleShare = () => {
-    const isReel = post.type === 'video'
-    const url = `${window.location.origin}/${isReel ? 'reels' : 'post'}/${post.id}`
-    navigator.clipboard.writeText(url)
-    toast.success('Link copied to clipboard!')
+    try {
+      const isReel = post.type === 'video'
+      const url = `${window.location.origin}/${isReel ? 'reels' : 'post'}/${post.id}`
+      navigator.clipboard.writeText(url)
+      toast.success('Link copied to clipboard!')
+    } catch (e) {
+      console.error('Share failed:', e)
+    }
   }
 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true })

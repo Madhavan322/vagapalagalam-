@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Search, Hash, TrendingUp, UserPlus, Check, Users } from 'lucide-react'
-import { supabase } from '../services/supabaseClient'
-import { useAuthStore } from '../context/authStore'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, TrendingUp, UserPlus, Check, Grid, Play, Hash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { supabase, withTimeout } from '../services/supabaseClient'
+import { useAuthStore } from '../context/authStore'
 
 export default function Explore() {
   const { user } = useAuthStore()
@@ -17,7 +17,7 @@ export default function Explore() {
   const [following, setFollowing] = useState({})
 
   useEffect(() => {
-    fetchContent()
+    fetchTrending()
     fetchSuggestions()
   }, [])
 
@@ -26,14 +26,57 @@ export default function Explore() {
     else fetchContent()
   }, [query, tab])
 
+  const fetchTrending = async () => {
+    try {
+      const { data } = await withTimeout(
+        supabase.from('posts').select('hashtags').not('hashtags', 'is', null).limit(20),
+        5000
+      ).catch(() => ({ data: [] }))
+      
+      const tags = {}
+      data?.forEach(p => p.hashtags?.forEach(t => tags[t] = (tags[t] || 0) + 1))
+      setTrending(Object.entries(tags).sort((a,b) => b[1]-a[1]).slice(0, 10).map(x => x[0]))
+    } catch (e) {
+      console.error('Failed to fetch trending:', e)
+    }
+  }
+
+  const fetchSuggestions = async () => {
+    if (!user) return
+    try {
+      const { data: follows } = await withTimeout(
+        supabase.from('followers').select('following_id').eq('follower_id', user.id),
+        5000
+      ).catch(() => ({ data: [] }))
+
+      const followIds = follows?.map(f => f.following_id) || []
+      followIds.push(user.id)
+
+      let q = supabase.from('users').select('*')
+      if (followIds.length > 0) {
+        q = q.not('id', 'in', `(${followIds.join(',')})`)
+      } else {
+        q = q.neq('id', user.id)
+      }
+
+      const { data } = await withTimeout(q.limit(5), 5000).catch(() => ({ data: [] }))
+      setSuggestions(data || [])
+    } catch (e) {
+      console.error('Failed to fetch suggestions:', e)
+    }
+  }
+
   const fetchContent = async () => {
     setLoading(true)
     try {
-      const { data } = await supabase
-        .from('posts')
-        .select('id, media_url, type, caption, likes(user_id)')
-        .order('created_at', { ascending: false })
-        .limit(30)
+      const { data } = await withTimeout(
+        supabase
+          .from('posts')
+          .select('id, media_url, type, caption, likes(user_id)')
+          .order('created_at', { ascending: false })
+          .limit(30),
+        8000
+      ).catch(() => ({ data: [] }))
       setPosts(data || [])
     } catch (e) {
       console.error('Failed to fetch explore content:', e)
@@ -42,38 +85,13 @@ export default function Explore() {
     }
   }
 
-  const fetchSuggestions = async () => {
-    if (!user) return
-    try {
-      const { data: follows } = await supabase
-        .from('followers')
-        .select('following_id')
-        .eq('follower_id', user.id)
-      const followIds = follows?.map(f => f.following_id) || []
-      followIds.push(user.id)
-
-      let query = supabase.from('users').select('*')
-      
-      if (followIds.length > 0) {
-        query = query.not('id', 'in', `(${followIds.join(',')})`)
-      } else {
-        query = query.neq('id', user.id)
-      }
-
-      const { data } = await query.limit(5)
-      setSuggestions(data || [])
-    } catch (e) {
-      console.error('Failed to fetch suggestions:', e)
-    }
-  }
-
   const searchAll = async () => {
     setLoading(true)
     try {
       const [postsRes, usersRes] = await Promise.all([
-        supabase.from('posts').select('id, media_url, type, caption').ilike('caption', `%${query}%`).limit(20),
-        supabase.from('users').select('*').ilike('username', `%${query}%`).limit(10)
-      ])
+        withTimeout(supabase.from('posts').select('id, media_url, type, caption').ilike('caption', `%${query}%`).limit(20), 8000),
+        withTimeout(supabase.from('users').select('*').ilike('username', `%${query}%`).limit(10), 8000)
+      ]).catch(() => [ {data: []}, {data: []} ])
       setPosts(postsRes.data || [])
       setUsers(usersRes.data || [])
     } catch (e) {
