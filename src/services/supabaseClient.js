@@ -1,20 +1,30 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project')) {
+  console.error('❌ SUPABASE CONFIGURATION MISSING: \n' +
+    'Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel Environment Variables.\n' +
+    'Guide: https://vercel.com/docs/projects/environment-variables')
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder', 
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
   }
-})
+)
 
 // Auth helpers with timeout
 export const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
