@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './context/authStore'
 
@@ -44,6 +45,25 @@ export default function App() {
       <AnimatePresence mode="wait">
         {loading && <LoadingScreen key="loader" />}
       </AnimatePresence>
+      
+      {/* Resilience Fallback: If session exists but profile failed/timed out */}
+      {!loading && !useAuthStore.getState().user && useAuthStore.getState().session && (
+        <div className="fixed inset-0 z-[100] bg-void flex flex-col items-center justify-center p-6 text-center">
+          <div className="text-4xl mb-4">📡</div>
+          <h2 className="font-display font-bold text-gradient mb-2">CONNECTION WEAK</h2>
+          <p className="text-sm text-muted mb-6 max-w-xs">
+            We're having trouble reaching the neural network. Please try reconnecting.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => initialize()}
+            className="btn-gradient px-6 py-3 rounded-xl flex items-center gap-2 text-xs font-display tracking-widest font-bold"
+          >
+            <RefreshCw size={14} /> RETRY CONNECTION
+          </motion.button>
+        </div>
+      )}
       <div className="scan-line" />
       <div className="orb orb-cyan" style={{ width: '600px', height: '600px', top: '-200px', left: '-200px' }} />
       <div className="orb orb-purple" style={{ width: '500px', height: '500px', bottom: '-100px', right: '-100px' }} />

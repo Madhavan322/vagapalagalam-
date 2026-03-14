@@ -45,6 +45,19 @@ export const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed ou
   ]);
 }
 
+// Retry helper
+export const withRetry = async (fn, retries = 2, delay = 1000) => {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn()
+    } catch (err) {
+      if (i === retries) throw err
+      console.warn(`Retry ${i + 1} failed, waiting ${delay}ms...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+}
+
 // Auth helpers
 export const signUp = async (email, password, username) => {
   console.log('Attempting to create account for:', email)
@@ -106,11 +119,13 @@ export const getCurrentUser = async () => {
       return null
     }
 
-    // 2. Try to get the profile from the 'users' table
+    // 2. Try to get the profile from the 'users' table with retry
     try {
-      const { data, error } = await withTimeout(
-        supabase.from('users').select('*').eq('id', user.id).single(),
-        10000
+      const { data, error } = await withRetry(() => 
+        withTimeout(
+          supabase.from('users').select('*').eq('id', user.id).single(),
+          15000
+        )
       )
       
       if (error) {
@@ -124,7 +139,7 @@ export const getCurrentUser = async () => {
       }
       return data
     } catch (dbErr) {
-      console.warn('DB error in getCurrentUser, using meta fallback:', dbErr)
+      console.warn('DB error in getCurrentUser after retries, using meta fallback:', dbErr)
       return { 
         id: user.id, 
         email: user.email, 
