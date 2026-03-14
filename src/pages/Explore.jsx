@@ -4,10 +4,12 @@ import { Search, TrendingUp, UserPlus, Users, Check, Grid, Play, Hash } from 'lu
 import { useNavigate } from 'react-router-dom'
 import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Explore() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  useSEO('Explore', 'Discover trending posts, users, and hashtags on Vangapalagalam.')
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('trending')
   const [posts, setPosts] = useState([])

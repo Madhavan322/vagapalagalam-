@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Zap, Shield, Globe, ChevronRight, Sparkles } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
 
 const features = [
   { icon: Zap, title: 'Real-Time Connections', desc: 'Experience instant messaging and live content updates powered by Supabase Realtime.', color: 'var(--accent-primary)' },
@@ -10,6 +11,7 @@ const features = [
 
 export default function Landing() {
   const navigate = useNavigate()
+  useSEO('Welcome', 'Join the next-generation social universe where communities thrive beyond the ordinary.')
 
   return (
     <div className="min-h-screen bg-void bg-grid flex flex-col">

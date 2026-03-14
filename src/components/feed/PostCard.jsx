@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Play } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Play, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, withTimeout } from '../../services/supabaseClient'
 import { useAuthStore } from '../../context/authStore'
@@ -64,11 +64,22 @@ export default function PostCard({ post, onUpdate }) {
     }
   }
 
-  const handleShare = () => {
-    setShowShare(true)
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return
+    try {
+      const { error } = await withTimeout(supabase.from('posts').delete().eq('id', post.id), 5000)
+      if (error) throw error
+      toast.success('Post deleted successfully')
+      if (onUpdate) onUpdate()
+    } catch (e) {
+      console.error('Delete failed:', e)
+      toast.error('Failed to delete post')
+    }
   }
 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
+
+  const isOwner = user?.id === post.user_id
 
   return (
     <motion.article
@@ -101,9 +112,21 @@ export default function PostCard({ post, onUpdate }) {
             </p>
           </div>
         </div>
-        <button style={{ color: 'var(--text-muted)' }}>
-          <MoreHorizontal size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isOwner && (
+            <motion.button 
+              whileTap={{ scale: 0.9 }} 
+              onClick={handleDelete}
+              style={{ color: 'var(--text-faint)' }}
+              className="p-2 hover:text-accent-secondary transition-colors"
+            >
+              <Trash2 size={16} />
+            </motion.button>
+          )}
+          <button style={{ color: 'var(--text-muted)' }} className="p-2">
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Caption */}

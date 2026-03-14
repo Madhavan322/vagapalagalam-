@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, UserPlus, Bell, Check } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../services/supabaseClient'
+import { useNavigate, useParams } from 'react-router-dom'
+import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import { formatDistanceToNow } from 'date-fns'
+import { useSEO } from '../hooks/useSEO'
+import ShareModal from '../components/ui/ShareModal'
 
 const TYPE_CONFIG = {
   like:    { icon: Heart,          color: 'var(--accent-secondary)',  bg: 'rgba(255,107,157,0.1)'  },
@@ -26,6 +28,7 @@ const SEED_NOTIFS = [
 export default function Notifications() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  useSEO('Notifications', 'Keep up with your activity and community interactions.')
   const [notifs, setNotifs]   = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('all')
@@ -44,10 +47,17 @@ export default function Notifications() {
         .select('created_at, follower:follower_id(id, username, avatar)')
         .eq('following_id', user?.id)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(5)
 
-      const realNotifs = (follows || []).map(f => ({
-        id:       `follow-${f.follower.id}`,
+      const { data: likes } = await supabase
+        .from('likes')
+        .select('created_at, user:user_id(id, username, avatar), posts(id, caption)')
+        .in('post_id', (await supabase.from('posts').select('id').eq('user_id', user.id)).data?.map(p => p.id) || [])
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      const followNotifs = (follows || []).map(f => ({
+        id:       `follow-${f.follower.id}-${f.created_at}`,
         type:     'follow',
         username: f.follower.username,
         avatar:   f.follower.avatar,
@@ -57,7 +67,18 @@ export default function Notifications() {
         read:     false,
       }))
 
-      setNotifs([...realNotifs, ...SEED_NOTIFS])
+      const likeNotifs = (likes || []).map(l => ({
+        id:       `like-${l.user.id}-${l.created_at}`,
+        type:     'like',
+        username: l.user.username,
+        avatar:   l.user.avatar,
+        userId:   l.user.id,
+        text:     `liked your post: "${l.posts?.caption?.slice(0, 20)}..."`,
+        time:     l.created_at,
+        read:     false,
+      }))
+
+      setNotifs([...followNotifs, ...likeNotifs, ...SEED_NOTIFS])
     } catch {
       setNotifs(SEED_NOTIFS)
     } finally {

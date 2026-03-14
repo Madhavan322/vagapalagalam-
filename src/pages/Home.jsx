@@ -7,12 +7,14 @@ import { useAuthStore } from '../context/authStore'
 import PostCard from '../components/feed/PostCard'
 import Stories from '../components/stories/Stories'
 import toast from 'react-hot-toast'
+import { useSEO } from '../hooks/useSEO'
 
 const POSTS_PER_PAGE = 10
 
 export default function Home() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  useSEO('Home Feed', 'Stay connected with your community on Vangapalagalam.')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
