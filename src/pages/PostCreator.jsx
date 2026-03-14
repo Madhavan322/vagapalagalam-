@@ -2,8 +2,9 @@ import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Image, Video, Hash, X, UploadCloud, ArrowLeft, Clock } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase, uploadMedia } from '../services/supabaseClient'
+import { supabase, uploadMedia, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import { useSEO } from '../hooks/useSEO'
 import toast from 'react-hot-toast'
 
 const POST_TYPES = [
@@ -65,21 +66,27 @@ export default function PostCreator() {
 
       if (postType === 'story') {
         const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString()
-        await supabase.from('stories').insert({
-          user_id:    user.id,
-          media_url:  mediaUrl,
-          expires_at: expiresAt,
-          created_at: new Date().toISOString(),
-        })
+        await withTimeout(
+          supabase.from('stories').insert({
+            user_id:    user.id,
+            media_url:  mediaUrl,
+            expires_at: expiresAt,
+            created_at: new Date().toISOString(),
+          }),
+          10000
+        )
         toast.success('Story posted! Expires in 24 hours')
       } else {
-        await supabase.from('posts').insert({
-          user_id:    user.id,
-          caption:    fullCaption,
-          media_url:  mediaUrl,
-          type:       postType === 'text' ? 'text' : file?.type.startsWith('video') ? 'video' : 'image',
-          created_at: new Date().toISOString(),
-        })
+        await withTimeout(
+          supabase.from('posts').insert({
+            user_id:    user.id,
+            caption:    fullCaption,
+            media_url:  mediaUrl,
+            type:       postType === 'text' ? 'text' : file?.type.startsWith('video') ? 'video' : 'image',
+            created_at: new Date().toISOString(),
+          }),
+          10000
+        )
         toast.success('Post published!')
       }
       navigate('/home')

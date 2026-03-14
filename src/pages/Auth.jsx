@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { signIn, signUp } from '../services/supabaseClient'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -13,6 +14,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', username: '' })
   const redirect = params.get('redirect') || '/home'
+
+  useSEO(isSignUp ? 'Join Vangapalagalam' : 'Enter the Network', 'Access the future of social networking.')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -28,8 +31,6 @@ export default function Auth() {
         toast.success('Welcome back!')
       }
       
-      // Give a tiny moment for auth state to propagate through Supabase listeners
-      // then navigate. App.jsx ProtectedRoute will handle the loading screen.
       setTimeout(() => {
         navigate(redirect, { replace: true })
       }, 500)
@@ -37,8 +38,6 @@ export default function Auth() {
       toast.error(err.message || 'Something went wrong')
       setLoading(false)
     }
-    // Note: setLoading(false) in finally can cause a flicker if navigation is slow,
-    // but the store initialization handles the global loading state.
   }
 
   return (
@@ -51,14 +50,11 @@ export default function Auth() {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="relative z-10 w-full max-w-sm"
       >
-        {/* Back button */}
         <button onClick={() => navigate('/')} className="flex items-center gap-2 mb-8 text-sm btn-ghost px-3 py-2">
           <ArrowLeft size={16} /> Back
         </button>
 
-        {/* Card */}
         <div className="glass-strong rounded-2xl p-8">
-          {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-block w-16 h-16 rounded-full mb-4"
               style={{ background: 'conic-gradient(var(--accent-primary), var(--accent-tertiary), var(--accent-secondary), var(--accent-primary))', padding: '2.5px' }}>
@@ -74,7 +70,6 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* Toggle */}
           <div className="flex rounded-xl overflow-hidden mb-6 p-1"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
             {['Sign In', 'Sign Up'].map((label, i) => (
@@ -93,7 +88,6 @@ export default function Auth() {
             ))}
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <AnimatePresence>
               {isSignUp && (
@@ -178,7 +172,6 @@ export default function Auth() {
             </motion.button>
           </form>
 
-          {/* Demo hint */}
           <p className="text-center mt-5 font-mono" style={{ color: 'var(--text-faint)', fontSize: '0.65rem' }}>
             Try: demo@vpg.com / demo1234
           </p>

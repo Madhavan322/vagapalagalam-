@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { supabase } from '../services/supabaseClient'
+import { supabase, withTimeout } from '../services/supabaseClient'
 import { formatDistanceToNow } from 'date-fns'
+import { useSEO } from '../hooks/useSEO'
 
 const STORY_DURATION = 5000
 
 export default function StoryViewer() {
   const { userId } = useParams()
   const navigate   = useNavigate()
+  
+  useSEO('Story Viewer', 'Watch immersive stories on Vangapalagalam.')
 
   const [stories,  setStories]  = useState([])
   const [index,    setIndex]    = useState(0)
@@ -25,12 +28,16 @@ export default function StoryViewer() {
 
   const fetchStories = async () => {
     const now = new Date().toISOString()
-    const { data } = await supabase
-      .from('stories')
-      .select('*, users(id, username, avatar)')
-      .eq('user_id', userId)
-      .gt('expires_at', now)
-      .order('created_at', { ascending: true })
+    const { data } = await withTimeout(
+      supabase
+        .from('stories')
+        .select('*, users(id, username, avatar)')
+        .eq('user_id', userId)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: true }),
+      15000
+    ).catch(() => ({ data: [] }))
+    
     setStories(data || [])
     setLoading(false)
   }
