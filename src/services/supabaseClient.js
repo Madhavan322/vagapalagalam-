@@ -16,7 +16,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
+// Auth helpers with timeout
+export const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
