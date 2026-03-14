@@ -8,13 +8,14 @@
 
 - 🔐 **Auth** — Email/password signup & login (Supabase Auth)
 - 🏠 **Home Feed** — Posts from followed users, infinite scroll, likes & comments
+- 🤝 **Follow System** — High-performance following with instant UI updates
 - 📖 **Stories** — 24-hour stories with animated progress viewer
-- 🎬 **Reels** — Vertical short-video feed (TikTok-style)
-- 💬 **Messaging** — Real-time chat with Supabase Realtime
-- 🔍 **Explore** — Discover posts, users, trending hashtags
+- 🎬 **Reels** — Vertical short-video feed with IG-style sharing
+- 💬 **Messaging** — Real-time chat with rich shared-content previews
+- 🔍 **Explore** — Discover posts, users, trending hashtags with regex parsing
 - 🔔 **Notifications** — Likes, comments, follows
-- 👤 **Profile** — Grid view, follower/following counts, edit profile
-- ✏️ **Post Creator** — Upload photos, videos, text posts, stories
+- 👤 **Profile** — Grid view, follower/following counts, edit profile (optimized)
+- ✏️ **Post Creator** — Upload photos, videos, text posts, stories with auto-tags
 
 ---
 

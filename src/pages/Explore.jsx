@@ -228,8 +228,8 @@ export default function Explore() {
         <div className="card-glass rounded-2xl p-5 mb-5">
           <h3 className="font-display text-xs tracking-wider mb-3 text-accent-primary font-semibold">USERS</h3>
           <div className="space-y-3">
-            {users.map(u => (
-                <div className="flex items-center gap-3">
+            {users.length > 0 ? users.map(u => (
+                <div key={u.id} className="flex items-center gap-3">
                   <div
                     onClick={() => navigate(`/profile/${u.id}`)}
                     className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
@@ -248,7 +248,9 @@ export default function Explore() {
                     MESSAGE
                   </motion.button>
                 </div>
-            ))}
+            )) : (
+              <p className="text-xs text-center p-4 font-mono" style={{ color: 'var(--text-faint)' }}>NO USERS FOUND</p>
+            )}
           </div>
         </div>
       )}
@@ -262,7 +264,7 @@ export default function Explore() {
           <div className="explore-grid gap-0.5">
             {[...Array(9)].map((_, i) => <div key={i} className="skeleton aspect-square" />)}
           </div>
-        ) : (
+        ) : posts.length > 0 ? (
           <div className="explore-grid gap-0.5">
             {posts.map((p, i) => (
               <motion.div
@@ -282,8 +284,8 @@ export default function Explore() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center p-3"
                     style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
-                    <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
-                      {p.caption?.slice(0, 60)}
+                    <p className="text-[10px] text-center" style={{ color: 'var(--text-secondary)' }}>
+                      {p.caption?.slice(0, 40)}
                     </p>
                   </div>
                 )}
@@ -292,6 +294,10 @@ export default function Explore() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        ) : (
+          <div className="card-glass rounded-2xl p-12 text-center">
+            <p className="text-sm font-mono" style={{ color: 'var(--text-muted)' }}>NO POSTS DISCOVERED</p>
           </div>
         )}
       </div>
