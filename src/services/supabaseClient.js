@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project')) {
+export const isConfigMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || supabaseUrl.includes('your-project')
+
+if (isConfigMissing) {
   console.error('❌ SUPABASE CONFIGURATION MISSING: \n' +
     'Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel Environment Variables.\n' +
     'Guide: https://vercel.com/docs/projects/environment-variables')

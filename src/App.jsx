@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './context/authStore'
+import { isConfigMissing } from './services/supabaseClient'
 
 // Pages
 import Landing from './pages/Landing'
@@ -47,7 +48,7 @@ export default function App() {
       </AnimatePresence>
       
       {/* Resilience Fallback: If session exists but profile failed/timed out */}
-      {!loading && !useAuthStore.getState().user && useAuthStore.getState().session && (
+      {!loading && !useAuthStore.getState().user && useAuthStore.getState().session && !isConfigMissing && (
         <div className="fixed inset-0 z-[100] bg-void flex flex-col items-center justify-center p-6 text-center">
           <div className="text-4xl mb-4">📡</div>
           <h2 className="font-display font-bold text-gradient mb-2">CONNECTION WEAK</h2>
@@ -62,6 +63,32 @@ export default function App() {
           >
             <RefreshCw size={14} /> RETRY CONNECTION
           </motion.button>
+        </div>
+      )}
+
+      {/* Critical Fallback: Configuration Missing */}
+      {isConfigMissing && (
+        <div className="fixed inset-0 z-[110] bg-void flex flex-col items-center justify-center p-6 text-center border-t-2 border-accent-secondary/50">
+          <div className="text-4xl mb-4">🔑</div>
+          <h2 className="font-display font-bold text-accent-secondary mb-2">DATABASE NOT CONNECTED</h2>
+          <p className="text-sm text-muted mb-6 max-w-md">
+            The application is alive, but it can't find your Supabase keys. You must add <code className="text-accent-primary">VITE_SUPABASE_URL</code> and <code className="text-accent-primary">VITE_SUPABASE_ANON_KEY</code> to your Vercel Environment Variables.
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <a 
+              href="https://vercel.com/docs/projects/environment-variables" 
+              target="_blank" 
+              className="btn-gradient px-6 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-display tracking-widest font-bold"
+            >
+              LEARN HOW TO ADD KEYS
+            </a>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-xs text-muted hover:text-white transition-colors"
+            >
+              Refresh page after adding
+            </button>
+          </div>
         </div>
       )}
       <div className="scan-line" />
