@@ -43,7 +43,7 @@ export default function Home() {
           `)
           .order('created_at', { ascending: false })
           .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1),
-        10000
+        15000
       ).catch(err => ({ data: [], error: err }))
 
       if (error) throw error

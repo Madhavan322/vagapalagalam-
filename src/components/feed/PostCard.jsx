@@ -64,6 +64,10 @@ export default function PostCard({ post, onUpdate }) {
     }
   }
 
+  const handleShare = () => {
+    setShowShare(true)
+  }
+
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return
     try {

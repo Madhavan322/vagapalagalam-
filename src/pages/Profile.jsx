@@ -4,16 +4,19 @@ import { Grid, Play, Settings, UserPlus, UserMinus, MessageSquare, Edit3, Camera
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase, uploadMedia, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import { useSEO } from '../hooks/useSEO'
 import FollowButton from '../components/ui/FollowButton'
 import toast from 'react-hot-toast'
 
 export default function Profile() {
   const { userId } = useParams()
-  const { user, updateUser } = useAuthStore()
   const navigate = useNavigate()
-  const targetId = userId || user?.id
-
+  const { user: currentUser, updateUser } = useAuthStore()
+  const targetId = userId || currentUser?.id
+  const isOwnProfile = !userId || userId === currentUser?.id
+  
   const [profile,    setProfile]    = useState(null)
+  useSEO(profile ? `@${profile.username}` : 'Profile', `View ${profile?.username || 'user'}'s profile on Vangapalagalam.`)
   const [posts,      setPosts]      = useState([])
   const [reels,      setReels]      = useState([])
   const [tab,        setTab]        = useState('posts')

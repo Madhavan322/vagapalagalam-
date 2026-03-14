@@ -2,10 +2,12 @@ import { formatDistanceToNow } from 'date-fns'
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Image, ArrowLeft, Search, Smile, Play } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import { useSEO } from '../hooks/useSEO'
+import ShareModal from '../components/ui/ShareModal'
 
 const SharedReel = ({ reelId }) => {
   const navigate = useNavigate()
@@ -18,7 +20,7 @@ const SharedReel = ({ reelId }) => {
   if (!reel) return <div className="p-3 bg-panel rounded-xl animate-pulse h-24 mb-2" />
 
   return (
-    <div 
+    <div
       onClick={(e) => { e.stopPropagation(); navigate(`/reels/${reelId}`); }}
       className="mb-2 p-2 bg-panel rounded-2xl border border-white/10 cursor-pointer hover:border-accent-primary/50 transition-all group"
     >
@@ -43,6 +45,7 @@ export default function Messages() {
   const { userId } = useParams()
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  useSEO('Messages', 'Secure real-time chat with your community.')
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
   const [activeUser, setActiveUser] = useState(null)
