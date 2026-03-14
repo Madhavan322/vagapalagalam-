@@ -33,7 +33,7 @@ export default function Explore() {
     try {
       const { data } = await withTimeout(
         supabase.from('posts').select('caption').limit(150),
-        7000
+        15000
       ).catch(() => ({ data: [] }))
       
       const tags = {}
@@ -61,7 +61,7 @@ export default function Explore() {
     try {
       const { data: follows } = await withTimeout(
         supabase.from('followers').select('following_id').eq('follower_id', user.id),
-        5000
+        10000
       ).catch(() => ({ data: [] }))
 
       const followIds = follows?.map(f => f.following_id) || []
@@ -74,7 +74,7 @@ export default function Explore() {
         q = q.neq('id', user.id)
       }
 
-      const { data } = await withTimeout(q.limit(5), 5000).catch(() => ({ data: [] }))
+      const { data } = await withTimeout(q.limit(5), 10000).catch(() => ({ data: [] }))
       setSuggestions(data || [])
     } catch (e) {
       console.error('Failed to fetch suggestions:', e)
@@ -90,7 +90,7 @@ export default function Explore() {
           .select('id, media_url, type, caption, likes(user_id)')
           .order('created_at', { ascending: false })
           .limit(30),
-        8000
+        15000
       ).catch(() => ({ data: [] }))
       setPosts(data || [])
     } catch (e) {
@@ -104,8 +104,8 @@ export default function Explore() {
     setLoading(true)
     try {
       const [postsRes, usersRes] = await Promise.all([
-        withTimeout(supabase.from('posts').select('id, media_url, type, caption').ilike('caption', `%${query}%`).limit(20), 8000),
-        withTimeout(supabase.from('users').select('*').ilike('username', `%${query}%`).limit(10), 8000)
+        withTimeout(supabase.from('posts').select('id, media_url, type, caption').ilike('caption', `%${query}%`).limit(20), 12000),
+        withTimeout(supabase.from('users').select('*').ilike('username', `%${query}%`).limit(10), 12000)
       ]).catch(() => [ {data: []}, {data: []} ])
       setPosts(postsRes.data || [])
       setUsers(usersRes.data || [])

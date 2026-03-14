@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { supabase } from '../services/supabaseClient'
+import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import ShareModal from '../components/ui/ShareModal'
 
@@ -166,20 +166,26 @@ export default function Reels() {
   const fetchReels = async () => {
     let specificReel = null
     if (reelId) {
-      const { data } = await supabase
-        .from('posts')
-        .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
-        .eq('id', reelId)
-        .single()
+      const { data } = await withTimeout(
+        supabase
+          .from('posts')
+          .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
+          .eq('id', reelId)
+          .single(),
+        10000
+      ).catch(() => ({ data: null }))
       if (data) specificReel = data
     }
 
-    const { data } = await supabase
-      .from('posts')
-      .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
-      .eq('type', 'video')
-      .order('created_at', { ascending: false })
-      .limit(20)
+    const { data } = await withTimeout(
+      supabase
+        .from('posts')
+        .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
+        .eq('type', 'video')
+        .order('created_at', { ascending: false })
+        .limit(20),
+      15000
+    ).catch(() => ({ data: [] }))
     
     let fetchedReels = data || []
     if (specificReel) {
