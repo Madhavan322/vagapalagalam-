@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, ArrowLeft, Play } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import ShareModal from '../components/ui/ShareModal'
 
 function ReelItem({ reel, isActive, shouldLoad }) {
   const { user } = useAuthStore()
@@ -13,6 +13,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
   const [liked, setLiked] = useState(reel.user_liked || false)
   const [likeCount, setLikeCount] = useState(reel.like_count || 0)
   const [showComments, setShowComments] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [playing, setPlaying] = useState(isActive)
 
   useEffect(() => {
@@ -49,94 +50,104 @@ function ReelItem({ reel, isActive, shouldLoad }) {
   }
 
   const handleShare = () => {
-    const url = `${window.location.origin}/reels/${reel.id}`
-    navigator.clipboard.writeText(url)
-    toast.success('Link copied to clipboard!')
+    setShowShare(true)
   }
 
   return (
-    <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden" onClick={togglePlay}>
-      {/* Video */}
-      {reel.media_url ? (
-        shouldLoad ? (
-          <video
-            ref={videoRef}
-            src={reel.media_url}
-            className="w-full h-full object-cover"
-            loop
-            playsInline
-            muted={muted}
-            preload="metadata"
-          />
+    <>
+      <div className="reel-item relative flex items-center justify-center bg-void overflow-hidden" onClick={togglePlay}>
+        {/* Video code same ... */}
+        {reel.media_url ? (
+          shouldLoad ? (
+            <video
+              ref={videoRef}
+              src={reel.media_url}
+              className="w-full h-full object-cover"
+              loop
+              playsInline
+              muted={muted}
+              preload="metadata"
+            />
+          ) : (
+            <div className="w-full h-full bg-black" />
+          )
         ) : (
-          <div className="w-full h-full bg-black" />
-        )
-      ) : (
-        <div className="w-full h-full flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
-          <p className="text-2xl font-display font-bold text-gradient text-center px-8">{reel.caption}</p>
-        </div>
-      )}
-
-      {/* Play/Pause Overlay */}
-      {!playing && reel.media_url && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none z-20">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center glass glow-purple">
-            <Play size={32} style={{ color: 'var(--accent-primary)', marginLeft: '4px' }} />
+          <div className="w-full h-full flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, var(--bg-surface), var(--bg-card))' }}>
+            <p className="text-2xl font-display font-bold text-gradient text-center px-8">{reel.caption}</p>
           </div>
-        </div>
-      )}
-
-      {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
-      {/* Top controls */}
-      <div className="absolute top-4 right-4 flex items-center gap-3">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setMuted(m => !m)}
-          className="w-9 h-9 rounded-full flex items-center justify-center glass"
-        >
-          {muted ? <VolumeX size={16} style={{ color: 'var(--accent-primary)' }} /> 
-                  : <Volume2 size={16} style={{ color: 'var(--accent-primary)' }} />}
-        </motion.button>
-      </div>
-
-      {/* Bottom info */}
-      <div className="absolute bottom-24 left-4 right-20 z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <img
-            src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`}
-            className="w-9 h-9 rounded-full border-2"
-            style={{ borderColor: 'var(--accent-primary)' }}
-          />
-          <span className="font-semibold text-white text-sm">{reel.users?.username}</span>
-        </div>
-        {reel.caption && (
-          <p className="text-sm text-white/80 line-clamp-2">{reel.caption}</p>
         )}
+
+        {/* Play/Pause Overlay code same ... */}
+        {!playing && reel.media_url && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none z-20">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center glass glow-purple">
+              <Play size={32} style={{ color: 'var(--accent-primary)', marginLeft: '4px' }} />
+            </div>
+          </div>
+        )}
+
+        {/* Overlay gradient code same ... */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+        {/* Top controls code same ... */}
+        <div className="absolute top-4 right-4 flex items-center gap-3">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setMuted(m => !m)}
+            className="w-9 h-9 rounded-full flex items-center justify-center glass"
+          >
+            {muted ? <VolumeX size={16} style={{ color: 'var(--accent-primary)' }} /> 
+                    : <Volume2 size={16} style={{ color: 'var(--accent-primary)' }} />}
+          </motion.button>
+        </div>
+
+        {/* Bottom info code same ... */}
+        <div className="absolute bottom-24 left-4 right-20 z-10">
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`}
+              className="w-9 h-9 rounded-full border-2"
+              style={{ borderColor: 'var(--accent-primary)' }}
+            />
+            <span className="font-semibold text-white text-sm">{reel.users?.username}</span>
+          </div>
+          {reel.caption && (
+            <p className="text-sm text-white/80 line-clamp-2">{reel.caption}</p>
+          )}
+        </div>
+
+        {/* Side actions code same ... */}
+        <div className="absolute right-4 bottom-28 flex flex-col gap-6 items-center z-30" onClick={e => e.stopPropagation()}>
+          <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
+            <Heart
+              size={26}
+              fill={liked ? 'var(--accent-secondary)' : 'none'}
+              style={{ color: liked ? 'var(--accent-secondary)' : 'white', filter: liked ? 'drop-shadow(0 0 8px var(--glow-secondary))' : 'none' }}
+            />
+            <span className="text-white text-xs font-mono">{likeCount}</span>
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
+            <MessageCircle size={26} className="text-white" />
+            <span className="text-white text-xs font-mono">{reel.comments?.length || 0}</span>
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center gap-1">
+            <Share2 size={26} className="text-white" />
+            <span className="text-white text-xs font-mono">Share</span>
+          </motion.button>
+        </div>
       </div>
 
-      {/* Side actions */}
-      <div className="absolute right-4 bottom-28 flex flex-col gap-6 items-center z-30" onClick={e => e.stopPropagation()}>
-        <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
-          <Heart
-            size={26}
-            fill={liked ? 'var(--accent-secondary)' : 'none'}
-            style={{ color: liked ? 'var(--accent-secondary)' : 'white', filter: liked ? 'drop-shadow(0 0 8px var(--glow-secondary))' : 'none' }}
+      <AnimatePresence>
+        {showShare && (
+          <ShareModal 
+            item={reel} 
+            type="reel" 
+            onClose={() => setShowShare(false)} 
           />
-          <span className="text-white text-xs font-mono">{likeCount}</span>
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-          <MessageCircle size={26} className="text-white" />
-          <span className="text-white text-xs font-mono">{reel.comments?.length || 0}</span>
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center gap-1">
-          <Share2 size={26} className="text-white" />
-          <span className="text-white text-xs font-mono">Share</span>
-        </motion.button>
-      </div>
-    </div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

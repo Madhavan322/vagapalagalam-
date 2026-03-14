@@ -6,6 +6,8 @@ import { supabase, withTimeout } from '../../services/supabaseClient'
 import { useAuthStore } from '../../context/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
+import FollowButton from '../ui/FollowButton'
+import ShareModal from '../ui/ShareModal'
 
 export default function PostCard({ post, onUpdate }) {
   const { user } = useAuthStore()
@@ -17,6 +19,7 @@ export default function PostCard({ post, onUpdate }) {
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState(post.comments || [])
   const [videoPlaying, setVideoPlaying] = useState(false)
+  const [showShare, setShowShare] = useState(false)
 
   const handleLike = async () => {
     if (!user) return
@@ -62,14 +65,7 @@ export default function PostCard({ post, onUpdate }) {
   }
 
   const handleShare = () => {
-    try {
-      const isReel = post.type === 'video'
-      const url = `${window.location.origin}/${isReel ? 'reels' : 'post'}/${post.id}`
-      navigator.clipboard.writeText(url)
-      toast.success('Link copied to clipboard!')
-    } catch (e) {
-      console.error('Share failed:', e)
-    }
+    setShowShare(true)
   }
 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
@@ -94,9 +90,12 @@ export default function PostCard({ post, onUpdate }) {
             />
           </div>
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {post.users?.username}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {post.users?.username}
+              </p>
+              <FollowButton targetId={post.users?.id} className="h-6 px-2 !rounded-lg !min-w-[70px] !text-[10px]" />
+            </div>
             <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
               {timeAgo}
             </p>
@@ -245,6 +244,15 @@ export default function PostCard({ post, onUpdate }) {
               <button type="submit" className="btn-gradient px-4 py-2 text-xs rounded-lg font-semibold">POST</button>
             </form>
           </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showShare && (
+          <ShareModal 
+            item={post} 
+            type={post.type === 'video' ? 'reel' : 'post'} 
+            onClose={() => setShowShare(false)} 
+          />
         )}
       </AnimatePresence>
     </motion.article>

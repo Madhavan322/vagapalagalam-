@@ -1,10 +1,43 @@
+import { formatDistanceToNow } from 'date-fns'
+
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Image, ArrowLeft, Search, Smile } from 'lucide-react'
+import { Send, Image, ArrowLeft, Search, Smile, Play } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
-import { formatDistanceToNow } from 'date-fns'
+
+const SharedReel = ({ reelId }) => {
+  const navigate = useNavigate()
+  const [reel, setReel] = useState(null)
+
+  useEffect(() => {
+    supabase.from('posts').select('*, users(username)').eq('id', reelId).single().then(({ data }) => setReel(data))
+  }, [reelId])
+
+  if (!reel) return <div className="p-3 bg-panel rounded-xl animate-pulse h-24 mb-2" />
+
+  return (
+    <div 
+      onClick={(e) => { e.stopPropagation(); navigate(`/reels/${reelId}`); }}
+      className="mb-2 p-2 bg-panel rounded-2xl border border-white/10 cursor-pointer hover:border-accent-primary/50 transition-all group"
+    >
+      <div className="relative aspect-[9/16] h-32 rounded-xl overflow-hidden mb-2">
+        {reel.media_url ? (
+          <video src={reel.media_url} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-void flex items-center justify-center p-2 text-[8px] text-center font-bold">
+            {reel.caption}
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center">
+          <Play size={20} className="text-white drop-shadow-lg" />
+        </div>
+      </div>
+      <p className="text-[10px] font-bold text-accent-primary truncate">@{reel.users?.username}</p>
+    </div>
+  )
+}
 
 export default function Messages() {
   const { userId } = useParams()
@@ -40,7 +73,7 @@ export default function Messages() {
   }, [messages])
 
   const fetchConversations = async () => {
-    if (!user) return
+    if (!user?.id) return
     try {
       const { data } = await supabase
         .from('messages')
@@ -62,6 +95,7 @@ export default function Messages() {
   }
 
   const loadConversation = async (otherUserId) => {
+    if (!user?.id) return
     try {
       const { data: userInfo } = await supabase.from('users').select('*').eq('id', otherUserId).single()
       setActiveUser(userInfo)
@@ -97,7 +131,7 @@ export default function Messages() {
 
   const sendMessage = async (e) => {
     e.preventDefault()
-    if (!text.trim() || !activeUser) return
+    if (!user?.id || !text.trim() || !activeUser) return
     const msg = text.trim()
     setText('')
     await supabase.from('messages').insert({
@@ -177,6 +211,19 @@ export default function Messages() {
     )
   }
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center card-glass rounded-2xl m-4">
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          Session active but profile not loaded. Please try refreshing.
+        </p>
+        <button onClick={() => window.location.reload()} className="btn-gradient px-6 py-2 rounded-xl text-xs font-bold">
+          REFRESH
+        </button>
+      </div>
+    )
+  }
+
   // Chat view
   return (
     <div className="fixed inset-0 bg-void bg-grid flex flex-col z-40">
@@ -202,11 +249,13 @@ export default function Messages() {
         )}
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         <AnimatePresence>
           {messages.map(msg => {
             const isMine = msg.sender_id === user?.id
+            const isShare = msg.message?.startsWith('share:')
+            const [_, type, id] = isShare ? msg.message.split(':') : []
+
             return (
               <motion.div
                 key={msg.id}
@@ -215,7 +264,10 @@ export default function Messages() {
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-xs px-4 py-2.5 ${isMine ? 'msg-sent' : 'msg-received'}`}>
-                  <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{msg.message}</p>
+                  {isShare && type === 'reel' && <SharedReel reelId={id} />}
+                  <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                    {isShare ? `Shared a ${type}` : msg.message}
+                  </p>
                   <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-faint)' }}>
                     {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                   </p>

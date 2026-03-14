@@ -4,6 +4,7 @@ import { Grid, Play, Settings, UserPlus, UserMinus, MessageSquare, Edit3, Camera
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase, uploadMedia, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import FollowButton from '../components/ui/FollowButton'
 import toast from 'react-hot-toast'
 
 export default function Profile() {
@@ -260,15 +261,11 @@ export default function Profile() {
           </div>
         ) : (
           <div className="flex gap-2">
-            <motion.button whileTap={{ scale: 0.95 }} onClick={handleFollow}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-display tracking-wider font-bold transition-all"
-              style={{
-                background: following ? 'rgba(255,107,157,0.1)' : 'linear-gradient(135deg,var(--accent-primary),var(--accent-secondary))',
-                border: following ? '1px solid rgba(255,107,157,0.3)' : 'none',
-                color: following ? 'var(--accent-secondary)' : 'white',
-              }}>
-              {following ? <><UserMinus size={14} /> UNFOLLOW</> : <><UserPlus size={14} /> FOLLOW</>}
-            </motion.button>
+            <FollowButton 
+              targetId={targetId} 
+              className="flex-1 py-2.5" 
+              onToggle={(isFollowing) => setCounts(c => ({ ...c, followers: c.followers + (isFollowing ? 1 : -1) }))} 
+            />
             <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate(`/messages/${targetId}`)}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-display tracking-wider btn-ghost">
               <MessageSquare size={14} /> MESSAGE

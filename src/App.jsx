@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './context/authStore'
 
@@ -18,31 +19,21 @@ import Layout from './components/layout/Layout'
 import LoadingScreen from './components/ui/LoadingScreen'
 
 function ProtectedRoute({ children }) {
-  const { session, user, loading } = useAuthStore()
+  const { session } = useAuthStore()
   const location = useLocation()
   
-  if (loading) return <LoadingScreen />
-  
-  // If we have a session but no user object yet, it might be fetching the profile
-  // but if loading is false and user is still null, we have an issue
   if (!session) return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />
-  
-  // Optional: If session exists but user doesn't after loading, we might want to allow it
-  // or handle as a partial state. For now, if loading is false and user is null, 
-  // we redirect if there's no session at all.
-  
   return children
 }
 
 function PublicRoute({ children }) {
-  const { user, loading } = useAuthStore()
-  if (loading) return <LoadingScreen />
+  const { user } = useAuthStore()
   if (user) return <Navigate to="/home" replace />
   return children
 }
 
 export default function App() {
-  const { initialize } = useAuthStore()
+  const { initialize, loading } = useAuthStore()
 
   useEffect(() => {
     initialize()
@@ -50,6 +41,9 @@ export default function App() {
 
   return (
     <>
+      <AnimatePresence mode="wait">
+        {loading && <LoadingScreen key="loader" />}
+      </AnimatePresence>
       <div className="scan-line" />
       <div className="orb orb-cyan" style={{ width: '600px', height: '600px', top: '-200px', left: '-200px' }} />
       <div className="orb orb-purple" style={{ width: '500px', height: '500px', bottom: '-100px', right: '-100px' }} />

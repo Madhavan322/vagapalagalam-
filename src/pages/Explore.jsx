@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, TrendingUp, UserPlus, Check, Grid, Play, Hash } from 'lucide-react'
+import { Search, TrendingUp, UserPlus, Users, Check, Grid, Play, Hash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
@@ -15,6 +15,7 @@ export default function Explore() {
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [following, setFollowing] = useState({})
+  const [trending, setTrending] = useState([])
 
   useEffect(() => {
     fetchTrending()
@@ -29,13 +30,25 @@ export default function Explore() {
   const fetchTrending = async () => {
     try {
       const { data } = await withTimeout(
-        supabase.from('posts').select('hashtags').not('hashtags', 'is', null).limit(20),
-        5000
+        supabase.from('posts').select('caption').limit(150),
+        7000
       ).catch(() => ({ data: [] }))
       
       const tags = {}
-      data?.forEach(p => p.hashtags?.forEach(t => tags[t] = (tags[t] || 0) + 1))
-      setTrending(Object.entries(tags).sort((a,b) => b[1]-a[1]).slice(0, 10).map(x => x[0]))
+      data?.forEach(p => {
+        const found = p.caption?.match(/#[A-Za-z0-9_]+/g)
+        found?.forEach(t => {
+          const cleanTag = t.toLowerCase().replace('#', '')
+          if (cleanTag) tags[cleanTag] = (tags[cleanTag] || 0) + 1
+        })
+      })
+      
+      const sortedTags = Object.entries(tags)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(x => x[0])
+        
+      setTrending(sortedTags)
     } catch (e) {
       console.error('Failed to fetch trending:', e)
     }
@@ -189,7 +202,7 @@ export default function Explore() {
             </h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {trendingTags.map(tag => (
+            {(trending.length > 0 ? trending.map(t => `#${t}`) : trendingTags).map(tag => (
               <motion.button
                 key={tag}
                 whileHover={{ scale: 1.05 }}

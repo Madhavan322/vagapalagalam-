@@ -23,7 +23,7 @@ export const useAuthStore = create(
             console.warn('Auth initialization timed out. Forcing UI unblock.')
             set({ loading: false })
           }
-        }, 10000)
+        }, 15000)
 
         try {
           const { data: { session }, error } = await supabase.auth.getSession()
@@ -60,7 +60,10 @@ export const useAuthStore = create(
 supabase.auth.onAuthStateChange(async (event, session) => {
   const store = useAuthStore.getState()
   
+  // Only handle major events to avoid flickering during INITIAL_SESSION or redundant triggers
   if (event === 'SIGNED_IN' && session) {
+    if (store.session?.access_token === session.access_token && store.user) return;
+    
     store.setLoading(true)
     store.setSession(session)
     try {
@@ -74,7 +77,5 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   } else if (event === 'SIGNED_OUT') {
     store.logout()
     store.setLoading(false)
-  } else if (event === 'INITIAL_SESSION') {
-    // Already handled by manual initialize()
   }
 })
