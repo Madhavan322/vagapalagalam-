@@ -23,7 +23,7 @@ export const useAuthStore = create(
             console.warn('Auth initialization timed out. Forcing UI unblock.')
             set({ loading: false })
           }
-        }, 15000)
+        }, 45000)
 
         try {
           const { data: { session }, error } = await supabase.auth.getSession()
