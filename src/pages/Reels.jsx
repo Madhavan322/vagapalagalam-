@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Trash2, MoreVertical } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
+import toast from 'react-hot-toast'
 import ShareModal from '../components/ui/ShareModal'
 
 function ReelItem({ reel, isActive, shouldLoad }) {
@@ -15,6 +16,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [playing, setPlaying] = useState(isActive)
+  const isOwner = user?.id === reel.user_id
 
   useEffect(() => {
     if (!videoRef.current) return
@@ -38,14 +40,33 @@ function ReelItem({ reel, isActive, shouldLoad }) {
     }
   }
 
-  const handleLike = async () => {
+  const handleLike = async (e) => {
+    e.stopPropagation()
+    if (!user) return toast.error('Sign in to like')
     const newLiked = !liked
     setLiked(newLiked)
     setLikeCount(c => c + (newLiked ? 1 : -1))
-    if (newLiked) {
-      await supabase.from('likes').insert({ user_id: user.id, post_id: reel.id })
-    } else {
-      await supabase.from('likes').delete().match({ user_id: user.id, post_id: reel.id })
+    try {
+      if (newLiked) {
+        await supabase.from('likes').insert({ user_id: user.id, post_id: reel.id })
+      } else {
+        await supabase.from('likes').delete().match({ user_id: user.id, post_id: reel.id })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleDelete = async (e) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this reel forever?')) return
+    try {
+      const { error } = await withTimeout(supabase.from('posts').delete().eq('id', reel.id), 5000)
+      if (error) throw error
+      toast.success('Reel deleted')
+      window.location.reload() // Simplest way to refresh the feed
+    } catch (err) {
+      toast.error('Failed to delete reel')
     }
   }
 
@@ -90,8 +111,16 @@ function ReelItem({ reel, isActive, shouldLoad }) {
         {/* Overlay gradient code same ... */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
-        {/* Top controls code same ... */}
         <div className="absolute top-4 right-4 flex items-center gap-3">
+          {isOwner && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleDelete}
+              className="w-9 h-9 rounded-full flex items-center justify-center glass border-red-500/30"
+            >
+              <Trash2 size={16} className="text-red-500" />
+            </motion.button>
+          )}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setMuted(m => !m)}
@@ -157,14 +186,19 @@ export default function Reels() {
   const { user } = useAuthStore()
   const [reels, setReels] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(0)
   const [activeIndex, setActiveIndex] = useState(0)
   const containerRef = useRef(null)
 
   useEffect(() => {
-    fetchReels()
+    fetchReels(0)
   }, [user?.id])
 
-  const fetchReels = async () => {
+  const fetchReels = async (pageNum = 0, append = false) => {
+    if (pageNum === 0) setLoading(true)
+    else setLoadingMore(true)
     let specificReel = null
     if (reelId) {
       const { data } = await withTimeout(
@@ -184,7 +218,7 @@ export default function Reels() {
         .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
         .eq('type', 'video')
         .order('created_at', { ascending: false })
-        .limit(20),
+        .range(pageNum * 10, (pageNum + 1) * 10 - 1),
       15000
     ).catch(() => ({ data: [] }))
     
@@ -193,6 +227,8 @@ export default function Reels() {
       user_liked: r.likes?.some(l => l.user_id === user?.id),
       like_count: r.likes?.length || 0
     }))
+
+    if (fetchedReels.length < 10) setHasMore(false)
 
     let finalReels = fetchedReels
     if (specificReel) {
@@ -204,20 +240,57 @@ export default function Reels() {
       finalReels = [enrichedSpecific, ...fetchedReels.filter(r => r.id !== specificReel.id)]
     }
 
-    setReels(finalReels)
+    if (append) setReels(prev => [...prev, ...finalReels])
+    else setReels(finalReels)
+    
     setLoading(false)
+    setLoadingMore(false)
+  }
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return
+    const nextPage = page + 1
+    setPage(nextPage)
+    fetchReels(nextPage, true)
   }
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    const handleScroll = () => {
-      const idx = Math.round(container.scrollTop / window.innerHeight)
-      setActiveIndex(idx)
+
+    const observerOptions = {
+      root: container,
+      threshold: 0.6, // Reel must be 60% visible to be considered active
     }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = parseInt(entry.target.getAttribute('data-index'))
+          if (!isNaN(index)) {
+            setActiveIndex(index)
+          }
+        }
+      })
+    }, observerOptions)
+
+    const reelItems = container.querySelectorAll('.reel-item')
+    reelItems.forEach((item) => observer.observe(item))
+
+    // Infinite scroll check based on scrolling position
+    const handleScroll = () => {
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 600) {
+        loadMore()
+      }
+    }
+    
     container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [])
+    
+    return () => {
+      observer.disconnect()
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [reels]) // Re-run when reels update to observe new items
 
   if (loading) {
     return (
@@ -257,12 +330,13 @@ export default function Reels() {
       ) : (
         <div ref={containerRef} className="reel-container">
           {reels.map((reel, i) => (
-            <ReelItem 
-              key={reel.id} 
-              reel={reel} 
-              isActive={i === activeIndex} 
-              shouldLoad={Math.abs(i - activeIndex) <= 2}
-            />
+            <div key={reel.id} className="reel-item" data-index={i}>
+              <ReelItem 
+                reel={reel} 
+                isActive={i === activeIndex} 
+                shouldLoad={Math.abs(i - activeIndex) <= 2}
+              />
+            </div>
           ))}
         </div>
       )}

@@ -12,32 +12,51 @@ import ShareModal from '../components/ui/ShareModal'
 const SharedReel = ({ reelId }) => {
   const navigate = useNavigate()
   const [reel, setReel] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('posts').select('*, users(username)').eq('id', reelId).single().then(({ data }) => setReel(data))
+    supabase.from('posts').select('*, users(username, avatar)').eq('id', reelId).single()
+      .then(({ data }) => {
+        setReel(data)
+        setLoading(false)
+      })
   }, [reelId])
 
-  if (!reel) return <div className="p-3 bg-panel rounded-xl animate-pulse h-24 mb-2" />
+  if (loading) return (
+    <div className="p-3 bg-panel rounded-2xl animate-pulse h-32 mb-2 border border-white/5">
+      <div className="w-full h-full bg-white/5 rounded-xl" />
+    </div>
+  )
+  if (!reel) return null
 
   return (
-    <div
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       onClick={(e) => { e.stopPropagation(); navigate(`/reels/${reelId}`); }}
-      className="mb-2 p-2 bg-panel rounded-2xl border border-white/10 cursor-pointer hover:border-accent-primary/50 transition-all group"
+      className="mb-2 p-1.5 bg-void rounded-2xl border border-accent-primary/20 cursor-pointer overflow-hidden group shadow-2xl relative"
     >
-      <div className="relative aspect-[9/16] h-32 rounded-xl overflow-hidden mb-2">
+      <div className="relative aspect-[9/16] h-40 rounded-xl overflow-hidden">
         {reel.media_url ? (
-          <video src={reel.media_url} className="w-full h-full object-cover" />
+          <video src={reel.media_url} className="w-full h-full object-cover" muted playsInline />
         ) : (
-          <div className="w-full h-full bg-void flex items-center justify-center p-2 text-[8px] text-center font-bold">
-            {reel.caption}
+          <div className="w-full h-full bg-panel flex items-center justify-center p-4">
+            <p className="text-[10px] text-center font-mono text-muted">{reel.caption?.slice(0, 40)}...</p>
           </div>
         )}
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center">
-          <Play size={20} className="text-white drop-shadow-lg" />
+        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center glass shadow-neon-primary">
+            <Play size={16} className="text-white ml-1" />
+          </div>
         </div>
       </div>
-      <p className="text-[10px] font-bold text-accent-primary truncate">@{reel.users?.username}</p>
-    </div>
+      <div className="p-2 flex items-center gap-2">
+        <div className="w-5 h-5 rounded-full overflow-hidden border border-accent-primary/30">
+          <img src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`} className="w-full h-full object-cover" />
+        </div>
+        <p className="text-[10px] font-bold text-accent-primary truncate">@{reel.users?.username}</p>
+      </div>
+    </motion.div>
   )
 }
 
@@ -130,28 +149,28 @@ export default function Messages() {
         channelRef.current = null
       }
 
-      // Subscribe to new messages for THIS specific conversation only
+      // Subscribe to new messages for THIS specific conversation
       const channel = supabase.channel(`chat-${user.id}-${otherUserId}`)
       channel
         .on('postgres_changes', { 
           event: 'INSERT', 
           schema: 'public', 
           table: 'messages',
-          filter: `or(sender_id.eq.${otherUserId},receiver_id.eq.${otherUserId})`
+          filter: `receiver_id.eq.${user.id}`
         },
         (payload) => {
-          // Double verify strictly in JS to prevent any bleeding
-          const isRelevant = 
-            (payload.new.sender_id === otherUserId && payload.new.receiver_id === user.id) ||
-            (payload.new.sender_id === user.id && payload.new.receiver_id === otherUserId);
+          // Verify relevance in JS
+          const fromOther = payload.new.sender_id === otherUserId && payload.new.receiver_id === user.id;
           
-          if (isRelevant) {
+          if (fromOther) {
             setMessages(prev => {
-              // Deduplicate just in case
               if (prev.some(m => m.id === payload.new.id)) return prev;
               return [...prev, payload.new];
             });
-            // Update conv list in background
+            // Update last message in conv list local state
+            updateConversationList(payload.new, userInfo);
+          } else {
+            // Message for a different conversation, just refresh list
             fetchConversations();
           }
         })
@@ -166,18 +185,56 @@ export default function Messages() {
     }
   }
 
+  const updateConversationList = (newMsg, otherUser) => {
+    setConversations(prev => {
+      const existing = prev.find(c => c.id === otherUser.id);
+      if (existing) {
+        const updated = { ...existing, lastMsg: newMsg };
+        // Move to top
+        return [updated, ...prev.filter(c => c.id !== otherUser.id)];
+      } else {
+        return [{ ...otherUser, lastMsg: newMsg }, ...prev];
+      }
+    });
+  }
+
   const sendMessage = async (e) => {
     e.preventDefault()
     if (!user?.id || !text.trim() || !activeUser) return
-    const msg = text.trim()
+    const msgContent = text.trim()
     setText('')
-    await supabase.from('messages').insert({
+
+    const tempId = Date.now().toString()
+    const optimisticMsg = {
+      id: tempId,
       sender_id: user.id,
       receiver_id: activeUser.id,
-      message: msg,
-      created_at: new Date().toISOString()
-    })
-    fetchConversations()
+      message: msgContent,
+      created_at: new Date().toISOString(),
+      optimistic: true
+    }
+
+    // Add locally for instant feedback
+    setMessages(prev => [...prev, optimisticMsg])
+    updateConversationList(optimisticMsg, activeUser)
+
+    try {
+      const { data, error } = await supabase.from('messages').insert({
+        sender_id: user.id,
+        receiver_id: activeUser.id,
+        message: msgContent,
+      }).select().single()
+
+      if (error) throw error
+      
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(m => m.id === tempId ? data : m))
+      updateConversationList(data, activeUser)
+    } catch (err) {
+      console.error('Failed to send:', err)
+      // Remove optimistic msg on error
+      setMessages(prev => prev.filter(m => m.id !== tempId))
+    }
   }
 
   const handleTyping = (e) => {
@@ -301,16 +358,16 @@ export default function Messages() {
             return (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10, x: isMine ? 20 : -20 }}
-                animate={{ opacity: 1, y: 0, x: 0 }}
+                initial={{ opacity: 0, scale: 0.9, y: 10, x: isMine ? 20 : -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-xs px-4 py-2.5 shadow-lg backdrop-blur-md ${isMine ? 'msg-sent border-accent-primary/20' : 'msg-received border-white/5'}`}>
+                <div className={`max-w-[85%] px-4 py-3 shadow-2xl backdrop-blur-xl rounded-2xl border ${isMine ? 'msg-sent border-accent-primary/30' : 'msg-received border-white/10'}`}>
                   {isShare && type === 'reel' && <SharedReel reelId={id} />}
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
                     {isShare ? `Shared a ${type}` : msg.message}
                   </p>
-                  <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-faint)' }}>
+                  <p className="text-[10px] mt-1.5 font-mono opacity-50" style={{ color: 'var(--text-muted)' }}>
                     {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                   </p>
                 </div>
