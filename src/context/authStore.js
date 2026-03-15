@@ -24,17 +24,17 @@ export const useAuthStore = create(
         
         const timeoutInfo = setTimeout(() => {
           if (get().loading) {
-            console.warn('Auth initialization force-timeout triggered (15s). Unblocking UI.')
+            console.warn('Auth initialization force-timeout triggered (5s). Unblocking UI.')
             set({ loading: false, initializing: false, initialized: true })
           }
-        }, 15000)
+        }, 5000)
 
         try {
-          // 1. Get the session with aggressive timeout and retry
+          // 1. Get the session with very aggressive timeout
           const { data: { session }, error } = await withRetry(
-            () => withTimeout(supabase.auth.getSession(), 10000, 'Session check timed out'),
-            2,
-            1000
+            () => withTimeout(supabase.auth.getSession(), 4000, 'Session check timed out'),
+            1,
+            500
           ).catch(err => {
             // If lock is stolen, just return null and let the other request handle it
             if (err.name === 'AbortError') return { data: { session: null }, error: null }
