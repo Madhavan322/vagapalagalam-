@@ -154,6 +154,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
 export default function Reels() {
   const navigate = useNavigate()
   const { reelId } = useParams()
+  const { user } = useAuthStore()
   const [reels, setReels] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
