@@ -11,9 +11,9 @@ import toast from 'react-hot-toast'
 export default function Profile() {
   const { userId } = useParams()
   const navigate = useNavigate()
-  const { user: currentUser, updateUser, logout: localLogout } = useAuthStore()
-  const targetId = userId || currentUser?.id
-  const isOwnProfile = !userId || userId === currentUser?.id
+  const { user, updateUser, logout: localLogout } = useAuthStore()
+  const targetId = userId || user?.id
+  const isOwnProfile = !userId || userId === user?.id
   
   const [profile,    setProfile]    = useState(null)
   useSEO(profile ? `@${profile.username}` : 'Profile', `View ${profile?.username || 'user'}'s profile on Vangapalagalam.`)
