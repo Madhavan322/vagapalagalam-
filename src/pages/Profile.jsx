@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Grid, Play, Settings, UserPlus, UserMinus, MessageSquare, Edit3, Camera } from 'lucide-react'
+import { Grid, Play, Settings, UserPlus, UserMinus, MessageSquare, Edit3, Camera, LogOut } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, uploadMedia, withTimeout } from '../services/supabaseClient'
+import { supabase, uploadMedia, withTimeout, signOut as supabaseSignOut } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import { useSEO } from '../hooks/useSEO'
 import FollowButton from '../components/ui/FollowButton'
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast'
 export default function Profile() {
   const { userId } = useParams()
   const navigate = useNavigate()
-  const { user: currentUser, updateUser } = useAuthStore()
+  const { user: currentUser, updateUser, logout: localLogout } = useAuthStore()
   const targetId = userId || currentUser?.id
   const isOwnProfile = !userId || userId === currentUser?.id
   
@@ -138,6 +138,17 @@ export default function Profile() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await supabaseSignOut()
+      localLogout()
+      toast.success('Signed out successfully')
+      navigate('/')
+    } catch (e) {
+      toast.error('Logout failed')
+    }
+  }
+
   if (loading) return (
     <div className="relative z-10 space-y-4">
       <div className="card-glass rounded-2xl p-6 space-y-4">
@@ -223,7 +234,19 @@ export default function Profile() {
               </div>
             ) : (
               <>
-                <h2 className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>{profile.username}</h2>
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-semibold text-base truncate" style={{ color: 'var(--text-primary)' }}>{profile.username}</h2>
+                  {isOwn && (
+                    <motion.button 
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleLogout}
+                      className="p-1.5 rounded-lg text-secondary hover:bg-white/5 transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut size={16} className="text-accent-secondary opacity-70" />
+                    </motion.button>
+                  )}
+                </div>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   {profile.bio || 'No bio yet.'}
                 </p>

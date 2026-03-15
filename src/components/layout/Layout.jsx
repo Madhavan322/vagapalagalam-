@@ -32,18 +32,20 @@ export default function Layout() {
   }, [user])
 
   const isReels = location.pathname.startsWith('/reels')
+  const isChat = location.pathname.startsWith('/messages/') && location.pathname.split('/').length > 2
+  const hideNav = isReels || isChat
 
   return (
-    <div className="min-h-screen bg-void bg-grid relative">
+    <div className="min-h-screen bg-void bg-grid relative overflow-x-hidden">
       {/* Main content */}
-      <main className={`${isReels ? '' : 'pb-24 pt-4 px-4 max-w-2xl mx-auto'}`}>
+      <main className={`${hideNav ? '' : 'pb-24 pt-4 px-4 max-w-2xl mx-auto'}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           >
             <Outlet />
           </motion.div>
@@ -51,10 +53,13 @@ export default function Layout() {
       </main>
 
       {/* Create button - floating */}
-      {!isReels && (
+      {!hideNav && (
         <motion.button
           whileHover={{ scale: 1.1, rotate: 90 }}
           whileTap={{ scale: 0.9 }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
           onClick={() => navigate('/create')}
           className="fixed bottom-28 right-4 z-50 w-13 h-13 rounded-full flex items-center justify-center btn-gradient"
           style={{
@@ -68,13 +73,14 @@ export default function Layout() {
       )}
 
       {/* Bottom navigation dock */}
-      {!isReels && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+      {!hideNav && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs px-4">
           <motion.nav
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="nav-dock flex items-center gap-1 px-3 py-2"
+            className="nav-dock flex items-center justify-around gap-1 px-3 py-2"
           >
             {navItems.map(({ icon: Icon, label, path }) => {
               const isActive = location.pathname === path || 

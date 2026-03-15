@@ -229,7 +229,12 @@ export default function Messages() {
 
   // Chat view
   return (
-    <div className="fixed inset-0 bg-void bg-grid flex flex-col z-40">
+    <motion.div 
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -50 }}
+      className="flex flex-col h-[calc(100vh-2rem)] bg-void bg-grid relative z-40"
+    >
       {/* Header */}
       <div className="glass-strong flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
         <button onClick={() => navigate('/messages')} style={{ color: 'var(--text-secondary)' }}>
@@ -266,9 +271,9 @@ export default function Messages() {
                 animate={{ opacity: 1, y: 0, x: 0 }}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-xs px-4 py-2.5 ${isMine ? 'msg-sent' : 'msg-received'}`}>
+                <div className={`max-w-xs px-4 py-2.5 shadow-lg backdrop-blur-md ${isMine ? 'msg-sent border-accent-primary/20' : 'msg-received border-white/5'}`}>
                   {isShare && type === 'reel' && <SharedReel reelId={id} />}
-                  <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                     {isShare ? `Shared a ${type}` : msg.message}
                   </p>
                   <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-faint)' }}>
