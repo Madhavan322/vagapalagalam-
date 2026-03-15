@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pzyvwakizibzrnyginst.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eXZ3YWtpemlienJueWdpbnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzcyNjIsImV4cCI6MjA4ODk1MzI2Mn0.UYVaKapwNhzzrZ96djCILfl38sSCVK1yHNJXQoUnijI'
 
 export const isConfigMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || supabaseUrl.includes('your-project')
 
@@ -12,8 +12,8 @@ if (isConfigMissing) {
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder', 
+  supabaseUrl, 
+  supabaseAnonKey, 
   {
     auth: {
       autoRefreshToken: true,
