@@ -17,7 +17,10 @@ export const useAuthStore = create(
 
       initialize: async () => {
         if (get().initialized || get().initializing) return
-        set({ initializing: true, loading: true })
+        
+        // If we have a session already (restored from storage by Zustand), don't block the UI
+        const hasSession = !!get().session
+        set({ initializing: true, loading: !hasSession })
         
         const timeoutInfo = setTimeout(() => {
           if (get().loading) {
