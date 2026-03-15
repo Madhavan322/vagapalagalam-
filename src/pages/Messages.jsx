@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Search, Smile, Send } from 'lucide-react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import { useSEO } from '../hooks/useSEO'
@@ -101,7 +101,15 @@ export default function Messages() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  if (!user) {
+  // Definitive fix: Allow UI to render if session exists, even if profile is still loading
+  const { session, initialized } = useAuthStore()
+
+  if (!session && initialized) {
+    return <Navigate to="/auth" replace />
+  }
+
+  // Show a minor loading state only if we don't have even a session yet
+  if (!session && !initialized) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
         <motion.div 
@@ -109,9 +117,6 @@ export default function Messages() {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
         />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Authenticating neural link...
-        </p>
       </div>
     )
   }
@@ -416,7 +421,8 @@ export default function Messages() {
       <form onSubmit={sendMessage} className="glass-strong flex items-center gap-3 p-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
         <button 
           type="button" 
-          onClick={() => setShowEmoji(!showEmoji)}
+          onClick={(e) => { e.preventDefault(); setShowEmoji(!showEmoji); }}
+          className="p-2 hover:bg-white/5 rounded-xl transition-colors"
           style={{ color: 'var(--accent-primary)', opacity: showEmoji ? 1 : 0.6 }}
         >
           <Smile size={20} />

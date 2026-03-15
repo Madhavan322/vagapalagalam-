@@ -1,11 +1,123 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Trash2, MoreVertical } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Trash2, Send } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase, withTimeout } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import toast from 'react-hot-toast'
 import ShareModal from '../components/ui/ShareModal'
+
+function CommentPanel({ postId, onClose }) {
+  const { user } = useAuthStore()
+  const [comments, setComments] = useState([])
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchComments()
+    
+    // Subscribe to new comments
+    const channel = supabase.channel(`comments-${postId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, 
+        () => fetchComments())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [postId])
+
+  const fetchComments = async () => {
+    const { data } = await supabase
+      .from('comments')
+      .select('*, users(username, avatar)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false })
+    if (data) setComments(data)
+    setLoading(false)
+  }
+
+  const handlePost = async (e) => {
+    e.preventDefault()
+    if (!user || !text.trim()) return
+    const content = text.trim()
+    setText('')
+
+    try {
+      const { error } = await supabase.from('comments').insert({
+        post_id: postId,
+        user_id: user.id,
+        content
+      })
+      if (error) throw error
+      fetchComments()
+    } catch (err) {
+      toast.error('Failed to post comment')
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      className="absolute inset-x-0 bottom-0 z-50 glass-strong h-[60vh] rounded-t-3xl border-t border-white/10 flex flex-col"
+    >
+      <div className="p-4 border-b border-white/5 flex items-center justify-between">
+        <h3 className="text-xs font-display tracking-widest font-bold text-accent-primary">COMMENTS</h3>
+        <button onClick={onClose} className="p-1 text-muted hover:text-white transition-colors">
+          <ArrowLeft size={18} className="rotate-270" style={{ transform: 'rotate(-90deg)' }} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex gap-3 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-white/5" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-2 w-20 bg-white/5 rounded" />
+                  <div className="h-3 w-full bg-white/5 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm text-muted">No comments yet. Be the first to speak!</p>
+          </div>
+        ) : (
+          comments.map(c => (
+            <div key={c.id} className="flex gap-3">
+              <img src={c.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${c.users?.username}`} 
+                className="w-8 h-8 rounded-full border border-white/10" />
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold text-white">@{c.users?.username}</span>
+                  <span className="text-[10px] text-faint">{formatDistanceToNow(new Date(c.created_at))} ago</span>
+                </div>
+                <p className="text-sm text-white/80 leading-relaxed">{c.content}</p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <form onSubmit={handlePost} className="p-4 border-t border-white/5 flex gap-3">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Add a comment..."
+          className="cyber-input flex-1 px-4 py-2 text-sm"
+        />
+        <button type="submit" className="p-2 btn-gradient rounded-xl">
+          <Send size={18} className="text-white" />
+        </button>
+      </form>
+    </motion.div>
+  )
+}
 
 function ReelItem({ reel, isActive, shouldLoad }) {
   const { user } = useAuthStore()
@@ -166,6 +278,15 @@ function ReelItem({ reel, isActive, shouldLoad }) {
           </motion.button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showComments && (
+          <CommentPanel 
+            postId={reel.id} 
+            onClose={() => setShowComments(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showShare && (
