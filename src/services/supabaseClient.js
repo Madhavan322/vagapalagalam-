@@ -29,7 +29,7 @@ export const supabase = createClient(
 )
 
 // Auth helpers with timeout
-export const withTimeout = (promise, ms = 45000, errorMsg = 'Connection timed out. Please try again.') => {
+export const withTimeout = (promise, ms = 60000, errorMsg = 'Connection timed out. Please try again.') => {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
@@ -115,7 +115,7 @@ export const signOut = async () => {
 export const getCurrentUser = async () => {
   try {
     // 1. Get the auth user first
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 45000)
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 60000)
     if (userError || !user) {
       console.error('Auth getUser failed or no user:', userError)
       return null

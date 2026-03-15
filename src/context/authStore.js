@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase, getCurrentUser } from '../services/supabaseClient'
+import { supabase, getCurrentUser, withTimeout } from '../services/supabaseClient'
 
 export const useAuthStore = create(
   persist(
@@ -23,10 +23,10 @@ export const useAuthStore = create(
             console.warn('Auth initialization timed out. Forcing UI unblock.')
             set({ loading: false })
           }
-        }, 45000)
+        }, 90000)
 
         try {
-          const { data: { session }, error } = await supabase.auth.getSession()
+          const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), 60000)
           if (error) throw error
 
           if (session) {
