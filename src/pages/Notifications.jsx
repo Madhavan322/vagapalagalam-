@@ -33,7 +33,9 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('all')
 
-  useEffect(() => { fetchNotifs() }, [])
+  useEffect(() => {
+    fetchNotifs()
+  }, [user?.id])
 
   const fetchNotifs = async () => {
     if (!user) {
@@ -49,12 +51,37 @@ export default function Notifications() {
         .order('created_at', { ascending: false })
         .limit(5)
 
-      const { data: likes } = await supabase
-        .from('likes')
-        .select('created_at, user:user_id(id, username, avatar), posts(id, caption)')
-        .in('post_id', (await supabase.from('posts').select('id').eq('user_id', user.id)).data?.map(p => p.id) || [])
-        .order('created_at', { ascending: false })
-        .limit(5)
+      // 2. Fetch notifications for likes on user's posts
+      const { data: myPosts } = await withTimeout(
+        supabase.from('posts').select('id').eq('user_id', user.id),
+        10000
+      ).catch(() => ({ data: [] }))
+      
+      const postIds = myPosts?.map(p => p.id) || []
+      
+      let likeNotifs = []
+      if (postIds.length > 0) {
+        const { data: likes } = await withTimeout(
+          supabase
+            .from('likes')
+            .select('created_at, user:user_id(id, username, avatar), posts(id, caption)')
+            .in('post_id', postIds)
+            .order('created_at', { ascending: false })
+            .limit(10),
+          15000
+        ).catch(() => ({ data: [] }))
+        
+        likeNotifs = (likes || []).map(l => ({
+          id:       `like-${l.user.id}-${l.created_at}`,
+          type:     'like',
+          username: l.user.username,
+          avatar:   l.user.avatar,
+          userId:   l.user.id,
+          text:     `liked your post: "${l.posts?.caption?.slice(0, 20)}..."`,
+          time:     l.created_at,
+          read:     false,
+        }))
+      }
 
       const followNotifs = (follows || []).map(f => ({
         id:       `follow-${f.follower.id}-${f.created_at}`,
@@ -67,18 +94,7 @@ export default function Notifications() {
         read:     false,
       }))
 
-      const likeNotifs = (likes || []).map(l => ({
-        id:       `like-${l.user.id}-${l.created_at}`,
-        type:     'like',
-        username: l.user.username,
-        avatar:   l.user.avatar,
-        userId:   l.user.id,
-        text:     `liked your post: "${l.posts?.caption?.slice(0, 20)}..."`,
-        time:     l.created_at,
-        read:     false,
-      }))
-
-      setNotifs([...followNotifs, ...likeNotifs, ...SEED_NOTIFS])
+      setNotifs([...followNotifs, ...likeNotifs])
     } catch {
       setNotifs(SEED_NOTIFS)
     } finally {
