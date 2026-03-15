@@ -81,10 +81,10 @@ export default function Messages() {
 
   useEffect(() => {
     fetchConversations()
-  }, [user?.id])
+  }, [session?.user?.id])
 
   useEffect(() => {
-    if (userId && user?.id) {
+    if (userId && session?.user?.id) {
       loadConversation(userId)
       // No cleanup here, we handle channel cleanup inside loadConversation to be safe
     } else {
@@ -95,7 +95,7 @@ export default function Messages() {
         channelRef.current = null
       }
     }
-  }, [userId, user?.id])
+  }, [userId, session?.user?.id])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -122,12 +122,13 @@ export default function Messages() {
   }
 
   const fetchConversations = async () => {
-    if (!user?.id) return
+    const currentUserId = session?.user?.id;
+    if (!currentUserId) return;
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('*, sender:sender_id(id, username, avatar), receiver:receiver_id(id, username, avatar)')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -148,7 +149,8 @@ export default function Messages() {
   }
 
   const loadConversation = async (otherUserId) => {
-    if (!user?.id || !otherUserId) return
+    const currentUserId = session?.user?.id;
+    if (!currentUserId || !otherUserId) return;
     
     // Prevent reloading the same conversation if it's already active
     if (activeUser?.id === otherUserId && messages.length > 0) return;
@@ -161,7 +163,7 @@ export default function Messages() {
       const { data: initialMessages, error: msgError } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
         .order('created_at', { ascending: true })
       
       if (msgError) throw msgError
@@ -174,13 +176,13 @@ export default function Messages() {
       }
 
       // Subscribe to new messages for THIS specific conversation
-      const channel = supabase.channel(`chat-${user.id}-${otherUserId}`)
+      const channel = supabase.channel(`chat-${currentUserId}-${otherUserId}`)
       channel
         .on('postgres_changes', { 
           event: 'INSERT', 
           schema: 'public', 
           table: 'messages',
-          filter: `receiver_id.eq.${user.id}`
+          filter: `receiver_id.eq.${currentUserId}`
         },
         (payload) => {
           // Verify relevance in JS
@@ -224,14 +226,15 @@ export default function Messages() {
 
   const sendMessage = async (e) => {
     e.preventDefault()
-    if (!user?.id || !text.trim() || !activeUser) return
+    const currentUserId = session?.user?.id;
+    if (!currentUserId || !text.trim() || !activeUser) return
     const msgContent = text.trim()
     setText('')
 
     const tempId = Date.now().toString()
     const optimisticMsg = {
       id: tempId,
-      sender_id: user.id,
+      sender_id: currentUserId,
       receiver_id: activeUser.id,
       message: msgContent,
       created_at: new Date().toISOString(),
@@ -244,7 +247,7 @@ export default function Messages() {
 
     try {
       const { data, error } = await supabase.from('messages').insert({
-        sender_id: user.id,
+        sender_id: currentUserId,
         receiver_id: activeUser.id,
         message: msgContent,
       }).select().single()
@@ -367,7 +370,7 @@ export default function Messages() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         <AnimatePresence>
           {messages.map(msg => {
-            const isMine = msg.sender_id === user?.id
+            const isMine = msg.sender_id === session?.user?.id
             const isShare = msg.message?.startsWith('share:')
             const [_, type, id] = isShare ? msg.message.split(':') : []
 
