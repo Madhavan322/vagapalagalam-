@@ -26,12 +26,23 @@ export const useAuthStore = create(
         }, 90000)
 
         try {
+          // 1. Just get the session first - this is fast
           const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), 60000)
           if (error) throw error
 
           if (session) {
-            const user = await getCurrentUser()
-            set({ session, user, loading: false })
+            set({ session })
+            
+            // 2. Unblock UI immediately if session exists
+            // Profile will load in the background
+            set({ loading: false })
+            
+            // 3. Background profile fetch
+            getCurrentUser().then(user => {
+              if (user) set({ user })
+            }).catch(err => {
+              console.error('Background user fetch failed:', err)
+            })
           } else {
             set({ session: null, user: null, loading: false })
           }

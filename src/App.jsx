@@ -47,22 +47,30 @@ export default function App() {
         {loading && <LoadingScreen key="loader" />}
       </AnimatePresence>
       
-      {/* Resilience Fallback: If session exists but profile failed/timed out */}
-      {!loading && !useAuthStore.getState().user && useAuthStore.getState().session && !isConfigMissing && (
+      {/* Resilience Fallback: Only show if session check itself failed significantly */}
+      {!loading && !useAuthStore.getState().session && !isConfigMissing && location.pathname !== '/' && location.pathname !== '/auth' && (
         <div className="fixed inset-0 z-[100] bg-void flex flex-col items-center justify-center p-6 text-center">
           <div className="text-4xl mb-4">📡</div>
-          <h2 className="font-display font-bold text-gradient mb-2">CONNECTION WEAK</h2>
+          <h2 className="font-display font-bold text-gradient mb-2">SIGNAL INTERRUPTED</h2>
           <p className="text-sm text-muted mb-6 max-w-xs">
-            We're having trouble reaching the neural network. Please try reconnecting.
+            The neural link is unstable. Attempting to re-establish connection...
           </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => initialize()}
-            className="btn-gradient px-6 py-3 rounded-xl flex items-center gap-2 text-xs font-display tracking-widest font-bold"
-          >
-            <RefreshCw size={14} /> RETRY CONNECTION
-          </motion.button>
+          <div className="flex flex-col gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => initialize()}
+              className="btn-gradient px-6 py-3 rounded-xl flex items-center gap-2 text-xs font-display tracking-widest font-bold"
+            >
+              <RefreshCw size={14} /> RECONNECT
+            </motion.button>
+            <button 
+              onClick={() => useAuthStore.setState({ loading: false })}
+              className="text-xs text-muted hover:text-white transition-colors"
+            >
+              Skip and attempt entry
+            </button>
+          </div>
         </div>
       )}
 

@@ -114,8 +114,12 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
-    // 1. Get the auth user first
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 60000)
+    // 1. Get the auth user first with retry for transient network issues
+    const { data: { user }, error: userError } = await withRetry(() => 
+      withTimeout(supabase.auth.getUser(), 60000),
+      2, // 2 retries
+      1000 // 1s delay
+    )
     if (userError || !user) {
       console.error('Auth getUser failed or no user:', userError)
       return null
