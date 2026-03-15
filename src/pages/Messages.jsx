@@ -307,13 +307,15 @@ export default function Messages() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center card-glass rounded-2xl m-4">
-        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-          Session active but profile not loaded. Please try refreshing.
+      <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
+        />
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          Authenticating neural link...
         </p>
-        <button onClick={() => window.location.reload()} className="btn-gradient px-6 py-2 rounded-xl text-xs font-bold">
-          REFRESH
-        </button>
       </div>
     )
   }

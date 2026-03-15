@@ -120,7 +120,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'vangapalagalam-auth',
-      partialize: (state) => ({ session: state.session }),
+      partialize: (state) => ({ session: state.session, user: state.user }),
     }
   )
 )
