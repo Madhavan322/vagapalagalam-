@@ -71,6 +71,9 @@ export const useAuthStore = create(
 supabase.auth.onAuthStateChange(async (event, session) => {
   const store = useAuthStore.getState()
   
+  // Ignore events during initial store cleanup or if already initializing
+  if (!store.initialized && store.loading) return;
+
   // Only handle major events to avoid flickering during INITIAL_SESSION or redundant triggers
   if (event === 'SIGNED_IN' && session) {
     if (store.session?.access_token === session.access_token && store.user) return;

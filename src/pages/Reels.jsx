@@ -187,12 +187,23 @@ export default function Reels() {
       15000
     ).catch(() => ({ data: [] }))
     
-    let fetchedReels = data || []
+    const fetchedReels = (data || []).map(r => ({
+      ...r,
+      user_liked: r.likes?.some(l => l.user_id === user?.id),
+      like_count: r.likes?.length || 0
+    }))
+
+    let finalReels = fetchedReels
     if (specificReel) {
-      fetchedReels = [specificReel, ...fetchedReels.filter(r => r.id !== specificReel.id)]
+      const enrichedSpecific = {
+        ...specificReel,
+        user_liked: specificReel.likes?.some(l => l.user_id === user?.id),
+        like_count: specificReel.likes?.length || 0
+      }
+      finalReels = [enrichedSpecific, ...fetchedReels.filter(r => r.id !== specificReel.id)]
     }
 
-    setReels(fetchedReels)
+    setReels(finalReels)
     setLoading(false)
   }
 

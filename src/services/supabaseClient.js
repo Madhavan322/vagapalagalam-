@@ -112,50 +112,65 @@ export const signOut = async () => {
   if (error) throw error
 }
 
-export const getCurrentUser = async () => {
-  try {
-    // 1. Get the auth user first with retry for transient network issues
-    const { data: { user }, error: userError } = await withRetry(() => 
-      withTimeout(supabase.auth.getUser(), 60000),
-      2, // 2 retries
-      1000 // 1s delay
-    )
-    if (userError || !user) {
-      console.error('Auth getUser failed or no user:', userError)
-      return null
-    }
+let userFetchPromise = null
 
-    // 2. Try to get the profile from the 'users' table with retry
+export const getCurrentUser = async () => {
+  if (userFetchPromise) return userFetchPromise
+
+  userFetchPromise = (async () => {
     try {
-      const { data, error } = await withRetry(() => 
-        withTimeout(
-          supabase.from('users').select('*').eq('id', user.id).single(),
-          35000
-        )
+      // 1. Get the auth user first with retry for transient network issues
+      const { data: { user }, error: userError } = await withRetry(() => 
+        withTimeout(supabase.auth.getUser(), 60000),
+        2, // 2 retries
+        1000 // 1s delay
       )
       
-      if (error) {
-        console.warn('Profile fetch from DB failed, using metadata fallback:', error)
+      if (userError || !user) {
+        if (userError) console.error('Auth getUser failed:', userError)
+        return null
+      }
+
+      // 2. Try to get the profile from the 'users' table with retry
+      try {
+        const { data, error } = await withRetry(() => 
+          withTimeout(
+            supabase.from('users').select('*').eq('id', user.id).single(),
+            35000
+          ),
+          2,
+          1000
+        )
+        
+        if (error) {
+          console.warn('Profile fetch from DB failed, using metadata fallback:', error)
+          return { 
+            id: user.id, 
+            email: user.email, 
+            username: user.user_metadata?.username || user.email.split('@')[0],
+            avatar: user.user_metadata?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.id}`
+          }
+        }
+        return data
+      } catch (dbErr) {
+        console.warn('DB error in getCurrentUser after retries, using meta fallback:', dbErr)
         return { 
           id: user.id, 
           email: user.email, 
-          username: user.user_metadata?.username || user.email.split('@')[0],
-          avatar: user.user_metadata?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.id}`
+          username: user.user_metadata?.username || user.email.split('@')[0]
         }
       }
-      return data
-    } catch (dbErr) {
-      console.warn('DB error in getCurrentUser after retries, using meta fallback:', dbErr)
-      return { 
-        id: user.id, 
-        email: user.email, 
-        username: user.user_metadata?.username || user.email.split('@')[0]
-      }
+    } catch (error) {
+      console.error('getCurrentUser critical failure:', error)
+      return null
+    } finally {
+      // Clear the promise after a short delay to allow fresh fetches later if needed
+      // but long enough to deduplicate concurrent startup calls
+      setTimeout(() => { userFetchPromise = null }, 2000)
     }
-  } catch (error) {
-    console.error('getCurrentUser critical failure:', error)
-    return null
-  }
+  })()
+
+  return userFetchPromise
 }
 
 // Upload helpers
