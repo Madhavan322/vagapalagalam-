@@ -150,18 +150,18 @@ body {
   background-size: 40px 40px;
 }
 
-/* ═══ Floating Orbs — Softer, Warmer ═══ */
+/* ═══ Floating Orbs — Vibrant Neons ═══ */
 .orb {
   position: fixed;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(120px);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.4;
 }
-.orb-cyan { background: radial-gradient(circle, rgba(0, 210, 255, 0.18), transparent 70%); }
-.orb-purple { background: radial-gradient(circle, rgba(108, 99, 255, 0.15), transparent 70%); }
-.orb-pink { background: radial-gradient(circle, rgba(255, 107, 157, 0.12), transparent 70%); }
+.orb-cyan { background: radial-gradient(circle, rgba(0, 245, 255, 0.2), transparent 70%); }
+.orb-purple { background: radial-gradient(circle, rgba(191, 0, 255, 0.15), transparent 70%); }
+.orb-pink { background: radial-gradient(circle, rgba(255, 0, 110, 0.12), transparent 70%); }
 
 /* ═══ Scan Line — Subtler ═══ */
 @keyframes scanLine {
@@ -411,11 +411,11 @@ body {
 }
 
 /* ═══ Glow Effects ═══ */
-.glow-cyan { box-shadow: 0 0 12px var(--glow-tertiary), 0 0 24px rgba(0, 210, 255, 0.08); }
-.glow-purple { box-shadow: 0 0 12px var(--glow-primary), 0 0 24px rgba(108, 99, 255, 0.08); }
-.glow-pink { box-shadow: 0 0 12px var(--glow-secondary), 0 0 24px rgba(255, 107, 157, 0.08); }
-.text-glow-cyan { text-shadow: 0 0 10px var(--accent-tertiary); }
-.text-glow-purple { text-shadow: 0 0 10px var(--accent-primary); }
+.glow-cyan { box-shadow: 0 0 12px var(--glow-primary), 0 0 24px rgba(0, 245, 255, 0.12); }
+.glow-purple { box-shadow: 0 0 12px rgba(191, 0, 255, 0.4), 0 0 24px rgba(191, 0, 255, 0.1); }
+.glow-pink { box-shadow: 0 0 12px var(--glow-secondary), 0 0 24px rgba(255, 0, 110, 0.12); }
+.text-glow-cyan { text-shadow: 0 0 10px var(--accent-primary); }
+.text-glow-purple { text-shadow: 0 0 10px var(--accent-purple); }
 
 /* ═══ Neon border (compat) ═══ */
 .neon-border {

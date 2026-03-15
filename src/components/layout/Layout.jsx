@@ -65,7 +65,7 @@ export default function Layout() {
           style={{
             width: '52px',
             height: '52px',
-            boxShadow: '0 4px 20px var(--glow-primary), 0 0 40px rgba(108,99,255,0.15)'
+            boxShadow: '0 4px 20px var(--glow-primary), 0 0 40px rgba(0, 245, 255, 0.2)'
           }}
         >
           <Plus size={22} className="text-white" />
@@ -96,7 +96,7 @@ export default function Layout() {
                   onClick={() => navigate(path)}
                   className="relative flex flex-col items-center p-2 rounded-xl transition-all duration-200 group"
                   style={{
-                    background: isActive ? 'rgba(108,99,255,0.12)' : 'transparent',
+                    background: isActive ? 'rgba(0, 245, 255, 0.1)' : 'transparent',
                   }}
                 >
                   <Icon
