@@ -17,6 +17,8 @@ export default function Auth() {
 
   useSEO(isSignUp ? 'Join Vangapalagalam' : 'Enter the Network', 'Access the future of social networking.')
 
+  const { login, register } = useAuthStore()
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -24,10 +26,11 @@ export default function Auth() {
       if (isSignUp) {
         if (!form.username.trim()) return toast.error('Username required')
         if (form.username.length < 3) return toast.error('Username too short')
-        await signUp(form.email, form.password, form.username)
+        await register(form.email, form.password, form.username)
         toast.success('Account created! Welcome to Vangapalagalam')
       } else {
-        await signIn(form.email, form.password)
+        const data = await login(form.email, form.password)
+        if (!data?.user) throw new Error('Account found, but session could not be established. Please try again.')
         toast.success('Welcome back!')
       }
       
@@ -35,7 +38,13 @@ export default function Auth() {
         navigate(redirect, { replace: true })
       }, 500)
     } catch (err) {
-      toast.error(err.message || 'Something went wrong')
+      console.error('Auth action failed:', err)
+      const msg = err.message || 'Something went wrong'
+      if (msg.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please check your credentials.')
+      } else {
+        toast.error(msg)
+      }
       setLoading(false)
     }
   }

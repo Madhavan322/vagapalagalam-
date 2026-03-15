@@ -72,7 +72,51 @@ export const useAuthStore = create(
         user: { ...state.user, ...updates }
       })),
 
-      logout: () => set({ user: null, session: null }),
+      login: async (email, password) => {
+        set({ initializing: true })
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+          if (error) throw error
+          
+          set({ session: data.session })
+          const user = await getCurrentUser()
+          set({ user, loading: false })
+          return data
+        } finally {
+          set({ initializing: false })
+        }
+      },
+
+      register: async (email, password, username) => {
+        set({ initializing: true })
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { username } }
+          })
+          if (error) throw error
+          
+          if (data.session) {
+            set({ session: data.session })
+            const user = await getCurrentUser()
+            set({ user, loading: false })
+          }
+          return data
+        } finally {
+          set({ initializing: false })
+        }
+      },
+
+      logout: async () => {
+        set({ initializing: true })
+        try {
+          await supabase.auth.signOut()
+          set({ user: null, session: null, loading: false })
+        } finally {
+          set({ initializing: false })
+        }
+      },
     }),
     {
       name: 'vangapalagalam-auth',
