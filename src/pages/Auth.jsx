@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { signIn, signUp } from '../services/supabaseClient'
+import { useAuthStore } from '../context/authStore'
 import { useSEO } from '../hooks/useSEO'
 
 export default function Auth() {
