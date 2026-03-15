@@ -63,10 +63,13 @@ export default function Messages() {
   useEffect(() => {
     if (userId && user?.id) {
       loadConversation(userId)
-      return () => {
-        if (channelRef.current) {
-          supabase.removeChannel(channelRef.current)
-        }
+      // No cleanup here, we handle channel cleanup inside loadConversation to be safe
+    } else {
+      setActiveUser(null)
+      setMessages([])
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
     }
   }, [userId, user?.id])
@@ -78,18 +81,22 @@ export default function Messages() {
   const fetchConversations = async () => {
     if (!user?.id) return
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .select('*, sender:sender_id(id, username, avatar), receiver:receiver_id(id, username, avatar)')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
+
+      if (error) throw error
 
       const convMap = {}
       data?.forEach(msg => {
         const other = msg.sender_id === user.id ? msg.receiver : msg.sender
         if (!convMap[other.id]) convMap[other.id] = { ...other, lastMsg: msg }
       })
-      setConversations(Object.values(convMap))
+      
+      const convList = Object.values(convMap)
+      setConversations(convList)
     } catch (e) {
       console.error('Failed to fetch conversations:', e)
     } finally {
@@ -98,35 +105,62 @@ export default function Messages() {
   }
 
   const loadConversation = async (otherUserId) => {
-    if (!user?.id) return
+    if (!user?.id || !otherUserId) return
+    
+    // Prevent reloading the same conversation if it's already active
+    if (activeUser?.id === otherUserId && messages.length > 0) return;
+
     try {
-      const { data: userInfo } = await supabase.from('users').select('*').eq('id', otherUserId).single()
+      const { data: userInfo, error: userError } = await supabase.from('users').select('*').eq('id', otherUserId).single()
+      if (userError) throw userError
       setActiveUser(userInfo)
 
-      const { data } = await supabase
+      const { data: initialMessages, error: msgError } = await supabase
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true })
-      setMessages(data || [])
+      
+      if (msgError) throw msgError
+      setMessages(initialMessages || [])
 
-      // Cleanup previous subscription
+      // Cleanup previous subscription precisely
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
 
-      // Subscribe to new messages
-      channelRef.current = supabase.channel(`chat-${otherUserId}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
-          (payload) => {
-            if (
-              (payload.new.sender_id === otherUserId && payload.new.receiver_id === user.id) ||
-              (payload.new.sender_id === user.id && payload.new.receiver_id === otherUserId)
-            ) {
-              setMessages(msgs => [...msgs, payload.new])
-            }
+      // Subscribe to new messages for THIS specific conversation only
+      const channel = supabase.channel(`chat-${user.id}-${otherUserId}`)
+      channel
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `or(sender_id.eq.${otherUserId},receiver_id.eq.${otherUserId})`
+        },
+        (payload) => {
+          // Double verify strictly in JS to prevent any bleeding
+          const isRelevant = 
+            (payload.new.sender_id === otherUserId && payload.new.receiver_id === user.id) ||
+            (payload.new.sender_id === user.id && payload.new.receiver_id === otherUserId);
+          
+          if (isRelevant) {
+            setMessages(prev => {
+              // Deduplicate just in case
+              if (prev.some(m => m.id === payload.new.id)) return prev;
+              return [...prev, payload.new];
+            });
+            // Update conv list in background
+            fetchConversations();
           }
-        ).subscribe()
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            channelRef.current = channel;
+          }
+        });
+
     } catch (e) {
       console.error('Failed to load conversation:', e)
     }

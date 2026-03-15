@@ -8,35 +8,36 @@
    ═══════════════════════════════════════════════════ */
 
 :root {
-  /* Primary palette — warm aurora tones */
-  --accent-primary: #6C63FF;
-  --accent-secondary: #FF6B9D;
-  --accent-tertiary: #00D2FF;
-  --accent-success: #10B981;
-  --accent-warning: #F59E0B;
+  /* High-Contrast Cyber-Void Palette */
+  --accent-primary: #00f5ff;    /* Electric Cyan */
+  --accent-secondary: #ff006e;  /* Neon Pink */
+  --accent-tertiary: #00ff88;   /* Hyper Green */
+  --accent-purple: #bf00ff;    /* Phonic Purple */
+  --accent-success: #00ff88;
+  --accent-warning: #ffcc00;
 
-  /* Surfaces — deep charcoal with warmth */
-  --bg-void: #0B0B0F;
-  --bg-surface: #13131A;
-  --bg-card: #1A1A24;
-  --bg-elevated: #22222E;
-  --bg-hover: #2A2A38;
+  /* Surfaces — Pure Deep Void */
+  --bg-void: #020205;
+  --bg-surface: #08080c;
+  --bg-card: #0c0c14;
+  --bg-elevated: #12121e;
+  --bg-hover: #181828;
 
-  /* Text hierarchy */
-  --text-primary: #F0EFF4;
-  --text-secondary: #A8A5B8;
-  --text-muted: #6B6880;
-  --text-faint: #45435A;
+  /* Text hierarchy — High Legibility */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b8;
+  --text-muted: #626280;
+  --text-faint: #404055;
 
-  /* Borders & accents */
-  --border-subtle: rgba(108, 99, 255, 0.08);
-  --border-default: rgba(108, 99, 255, 0.15);
-  --border-strong: rgba(108, 99, 255, 0.3);
+  /* Borders & accents — Sharper Neon */
+  --border-subtle: rgba(0, 245, 255, 0.08);
+  --border-default: rgba(0, 245, 255, 0.15);
+  --border-strong: rgba(0, 245, 255, 0.4);
 
-  /* Glow/shadow tokens */
-  --glow-primary: rgba(108, 99, 255, 0.4);
-  --glow-secondary: rgba(255, 107, 157, 0.35);
-  --glow-tertiary: rgba(0, 210, 255, 0.3);
+  /* Glow/shadow tokens — Vibrant Neons */
+  --glow-primary: rgba(0, 245, 255, 0.5);
+  --glow-secondary: rgba(255, 0, 110, 0.4);
+  --glow-tertiary: rgba(0, 255, 136, 0.35);
 }
 
 * {
@@ -49,20 +50,22 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ═══ Typography ═══ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
 body {
   background-color: var(--bg-void);
   color: var(--text-primary);
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ═══ Typography ═══ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 .font-display {
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* ═══ Scrollbar ═══ */
@@ -77,23 +80,25 @@ body {
 /* ═══ Glass Morphism ═══ */
 .glass,
 .card-glass {
-  background: rgba(26, 26, 36, 0.65);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(12, 12, 20, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-subtle);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-glass:hover {
   border-color: var(--border-default);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 245, 255, 0.05);
+  transform: translateY(-2px);
 }
 
 .glass-strong {
-  background: rgba(19, 19, 26, 0.92);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  background: rgba(8, 8, 12, 0.95);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
   border: 1px solid var(--border-default);
+  box-shadow: inset 0 0 20px rgba(0, 245, 255, 0.03);
 }
 
 /* ═══ Text Utilities ═══ */
