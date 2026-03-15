@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useAuthStore } from '../../context/authStore'
 
 export default function LoadingScreen() {
   return (
@@ -37,11 +38,7 @@ export default function LoadingScreen() {
           className="mt-8"
         >
           <button 
-            onClick={() => {
-              import('../../context/authStore').then(m => {
-                m.useAuthStore.setState({ loading: false })
-              })
-            }}
+            onClick={() => useAuthStore.setState({ loading: false, initializing: false, initialized: true })}
             className="text-[10px] font-mono text-muted hover:text-accent-secondary transition-colors underline decoration-accent-secondary/30 underline-offset-4"
           >
             STUCK? SKIP INITIALIZATION

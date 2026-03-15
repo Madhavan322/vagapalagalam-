@@ -36,6 +36,7 @@ function PublicRoute({ children }) {
 
 export default function App() {
   const { initialize, loading } = useAuthStore()
+  const location = useLocation()
 
   useEffect(() => {
     initialize()
@@ -65,7 +66,7 @@ export default function App() {
               <RefreshCw size={14} /> RECONNECT
             </motion.button>
             <button 
-              onClick={() => useAuthStore.setState({ loading: false })}
+              onClick={() => useAuthStore.setState({ loading: false, initializing: false, initialized: true })}
               className="text-xs text-muted hover:text-white transition-colors"
             >
               Skip and attempt entry
