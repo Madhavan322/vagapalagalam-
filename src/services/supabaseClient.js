@@ -29,7 +29,7 @@ export const supabase = createClient(
 )
 
 // Auth helpers with timeout
-export const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed out. Please try again.') => {
+export const withTimeout = (promise, ms = 45000, errorMsg = 'Connection timed out. Please try again.') => {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
@@ -48,7 +48,7 @@ export const withTimeout = (promise, ms = 20000, errorMsg = 'Connection timed ou
 }
 
 // Retry helper
-export const withRetry = async (fn, retries = 2, delay = 1000) => {
+export const withRetry = async (fn, retries = 3, delay = 1500) => {
   for (let i = 0; i <= retries; i++) {
     try {
       return await fn()
@@ -72,8 +72,8 @@ export const signUp = async (email, password, username) => {
           data: { username }
         }
       }),
-      25000,
-      'Account creation timed out. Your connection might be slow or Supabase is busy. Please try again.'
+      60000,
+      'Account creation timed out. Your connection might be slow. Please try again.'
     )
     if (error) {
       console.error('Supabase Sign Up Error:', error)
@@ -92,7 +92,7 @@ export const signIn = async (email, password) => {
   try {
     const { data, error } = await withTimeout(
       supabase.auth.signInWithPassword({ email, password }),
-      20000,
+      45000,
       'Login timed out. Please check your internet connection and try again.'
     )
     if (error) {
@@ -115,7 +115,7 @@ export const signOut = async () => {
 export const getCurrentUser = async () => {
   try {
     // 1. Get the auth user first
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 12000)
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 35000)
     if (userError || !user) {
       console.error('Auth getUser failed or no user:', userError)
       return null
@@ -126,7 +126,7 @@ export const getCurrentUser = async () => {
       const { data, error } = await withRetry(() => 
         withTimeout(
           supabase.from('users').select('*').eq('id', user.id).single(),
-          15000
+          35000
         )
       )
       
