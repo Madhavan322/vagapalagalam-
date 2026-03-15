@@ -62,10 +62,11 @@ const SharedReel = ({ reelId }) => {
 
 export default function Messages() {
   const { userId } = useParams()
-  const { user } = useAuthStore()
+  const { user, session, initialized } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   useSEO('Messages', 'Secure real-time chat with your community.')
+  
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
   const [activeUser, setActiveUser] = useState(location.state?.otherUser || null)
@@ -73,20 +74,37 @@ export default function Messages() {
   const [typing, setTyping] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showEmoji, setShowEmoji] = useState(false)
+  
   const bottomRef = useRef(null)
   const typingTimeout = useRef(null)
   const channelRef = useRef(null)
 
   const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
+  // Definitive fix: Handle redirection and loading before any other effects run
+  if (!session && initialized) {
+    return <Navigate to="/auth" replace />
+  }
+
+  if (!initialized) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
+        />
+      </div>
+    )
+  }
+
   useEffect(() => {
-    fetchConversations()
+    if (session?.user?.id) fetchConversations()
   }, [session?.user?.id])
 
   useEffect(() => {
     if (userId && session?.user?.id) {
       loadConversation(userId)
-      // No cleanup here, we handle channel cleanup inside loadConversation to be safe
     } else {
       setActiveUser(null)
       setMessages([])
@@ -101,27 +119,7 @@ export default function Messages() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Definitive fix: Allow UI to render if session exists, even if profile is still loading
-  const { session, initialized } = useAuthStore()
-
-  if (!session && initialized) {
-    return <Navigate to="/auth" replace />
-  }
-
-  // Show a minor loading state only if we don't have even a session yet
-  if (!session && !initialized) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
-        <motion.div 
-          animate={{ rotate: 360 }} 
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
-        />
-      </div>
-    )
-  }
-
-  const fetchConversations = async () => {
+  async function fetchConversations() {
     const currentUserId = session?.user?.id;
     if (!currentUserId) return;
     try {
@@ -135,8 +133,8 @@ export default function Messages() {
 
       const convMap = {}
       data?.forEach(msg => {
-        const other = msg.sender_id === user.id ? msg.receiver : msg.sender
-        if (!convMap[other.id]) convMap[other.id] = { ...other, lastMsg: msg }
+        const other = msg.sender_id === currentUserId ? msg.receiver : msg.sender
+        if (other && !convMap[other.id]) convMap[other.id] = { ...other, lastMsg: msg }
       })
       
       const convList = Object.values(convMap)
@@ -148,7 +146,7 @@ export default function Messages() {
     }
   }
 
-  const loadConversation = async (otherUserId) => {
+  async function loadConversation(otherUserId) {
     const currentUserId = session?.user?.id;
     if (!currentUserId || !otherUserId) return;
     
@@ -186,7 +184,7 @@ export default function Messages() {
         },
         (payload) => {
           // Verify relevance in JS
-          const fromOther = payload.new.sender_id === otherUserId && payload.new.receiver_id === user.id;
+          const fromOther = payload.new.sender_id === otherUserId && payload.new.receiver_id === currentUserId;
           
           if (fromOther) {
             setMessages(prev => {
