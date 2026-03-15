@@ -81,7 +81,34 @@ export default function Messages() {
 
   const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
-  // Definitive fix: Handle redirection and loading before any other effects run
+  useEffect(() => {
+    if (session?.user?.id) fetchConversations()
+  }, [session?.user?.id])
+
+  useEffect(() => {
+    if (userId && session?.user?.id) {
+      loadConversation(userId)
+    } else if (!userId) {
+      setActiveUser(null)
+      setMessages([])
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current)
+        } catch (e) {
+          console.warn('Channel cleanup error:', e)
+        }
+        channelRef.current = null
+      }
+    }
+  }, [userId, session?.user?.id])
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
+
+  // RENDERING LOGIC - ALWAYS BELOW HOOKS
   if (!session && initialized) {
     return <Navigate to="/auth" replace />
   }
@@ -97,27 +124,6 @@ export default function Messages() {
       </div>
     )
   }
-
-  useEffect(() => {
-    if (session?.user?.id) fetchConversations()
-  }, [session?.user?.id])
-
-  useEffect(() => {
-    if (userId && session?.user?.id) {
-      loadConversation(userId)
-    } else {
-      setActiveUser(null)
-      setMessages([])
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-    }
-  }, [userId, session?.user?.id])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   async function fetchConversations() {
     const currentUserId = session?.user?.id;
