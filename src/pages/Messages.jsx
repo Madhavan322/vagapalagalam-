@@ -2,7 +2,7 @@ import { formatDistanceToNow } from 'date-fns'
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Search, Smile, Send } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
