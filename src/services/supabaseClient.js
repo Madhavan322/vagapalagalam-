@@ -18,7 +18,9 @@ export const supabase = createClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      storageKey: 'vp-auth-token',
+      flowType: 'pkce'
     },
     realtime: {
       params: {
@@ -29,7 +31,7 @@ export const supabase = createClient(
 )
 
 // Auth helpers with timeout
-export const withTimeout = (promise, ms = 60000, errorMsg = 'Connection timed out. Please try again.') => {
+export const withTimeout = (promise, ms = 60000, errorMsg = 'Connection timed out (Vercel Cold Start or Network). Please try again.') => {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
@@ -47,12 +49,17 @@ export const withTimeout = (promise, ms = 60000, errorMsg = 'Connection timed ou
   ]);
 }
 
-// Retry helper
+// Retry helper with AbortError awareness
 export const withRetry = async (fn, retries = 3, delay = 1500) => {
   for (let i = 0; i <= retries; i++) {
     try {
       return await fn()
     } catch (err) {
+      // Don't retry if the lock was stolen or request aborted - another request is already handling it
+      if (err.name === 'AbortError' || err.message?.includes('Lock broken')) {
+        console.warn('Auth lock stolen, skipping retry.')
+        throw err
+      }
       if (i === retries) throw err
       console.warn(`Retry ${i + 1} failed, waiting ${delay}ms...`)
       await new Promise(resolve => setTimeout(resolve, delay))
@@ -121,10 +128,13 @@ export const getCurrentUser = async () => {
     try {
       // 1. Get the auth user first with retry for transient network issues
       const { data: { user }, error: userError } = await withRetry(() => 
-        withTimeout(supabase.auth.getUser(), 60000),
+        withTimeout(supabase.auth.getUser(), 12000),
         2, // 2 retries
         1000 // 1s delay
-      )
+      ).catch(err => {
+        if (err.name === 'AbortError') return { data: { user: null }, error: null }
+        throw err
+      })
       
       if (userError || !user) {
         if (userError) console.error('Auth getUser failed:', userError)
@@ -136,7 +146,7 @@ export const getCurrentUser = async () => {
         const { data, error } = await withRetry(() => 
           withTimeout(
             supabase.from('users').select('*').eq('id', user.id).single(),
-            35000
+            10000
           ),
           2,
           1000

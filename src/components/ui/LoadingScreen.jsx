@@ -29,6 +29,24 @@ export default function LoadingScreen() {
         >
           Initializing...
         </motion.p>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 5 }}
+          className="mt-8"
+        >
+          <button 
+            onClick={() => {
+              import('../../context/authStore').then(m => {
+                m.useAuthStore.setState({ loading: false })
+              })
+            }}
+            className="text-[10px] font-mono text-muted hover:text-accent-secondary transition-colors underline decoration-accent-secondary/30 underline-offset-4"
+          >
+            STUCK? SKIP INITIALIZATION
+          </button>
+        </motion.div>
       </div>
     </motion.div>
   )

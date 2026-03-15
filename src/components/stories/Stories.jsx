@@ -13,7 +13,7 @@ export default function Stories() {
 
   useEffect(() => {
     fetchStories()
-  }, [])
+  }, [user?.id])
 
   const fetchStories = async () => {
     try {

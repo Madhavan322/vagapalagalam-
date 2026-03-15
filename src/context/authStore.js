@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase, getCurrentUser, withTimeout } from '../services/supabaseClient'
+import { supabase, getCurrentUser, withTimeout, withRetry } from '../services/supabaseClient'
 
 export const useAuthStore = create(
   persist(
@@ -9,35 +9,42 @@ export const useAuthStore = create(
       session: null,
       loading: true,
       initialized: false,
+      initializing: false,
 
       setUser: (user) => set({ user }),
       setSession: (session) => set({ session }),
       setLoading: (loading) => set({ loading }),
 
       initialize: async () => {
-        if (get().initialized) return
-        set({ initialized: true, loading: true })
+        if (get().initialized || get().initializing) return
+        set({ initializing: true, loading: true })
         
         const timeoutInfo = setTimeout(() => {
           if (get().loading) {
-            console.warn('Auth initialization timed out. Forcing UI unblock.')
-            set({ loading: false })
+            console.warn('Auth initialization force-timeout triggered (15s). Unblocking UI.')
+            set({ loading: false, initializing: false, initialized: true })
           }
-        }, 90000)
+        }, 15000)
 
         try {
-          // 1. Just get the session first - this is fast
-          const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), 60000)
+          // 1. Get the session with aggressive timeout and retry
+          const { data: { session }, error } = await withRetry(
+            () => withTimeout(supabase.auth.getSession(), 10000, 'Session check timed out'),
+            2,
+            1000
+          ).catch(err => {
+            // If lock is stolen, just return null and let the other request handle it
+            if (err.name === 'AbortError') return { data: { session: null }, error: null }
+            throw err
+          })
+
           if (error) throw error
 
           if (session) {
             set({ session })
-            
-            // 2. Unblock UI immediately if session exists
-            // Profile will load in the background
             set({ loading: false })
             
-            // 3. Background profile fetch
+            // Background profile fetch
             getCurrentUser().then(user => {
               if (user) set({ user })
             }).catch(err => {
@@ -46,10 +53,14 @@ export const useAuthStore = create(
           } else {
             set({ session: null, user: null, loading: false })
           }
+
+          // 3. Start listener ONLY after initial check is done
+          setupAuthListener(set, get)
         } catch (error) {
           console.error('Auth initialization failed:', error)
           set({ session: null, user: null, loading: false })
         } finally {
+          set({ initialized: true, initializing: false })
           clearTimeout(timeoutInfo)
         }
       },
@@ -67,29 +78,30 @@ export const useAuthStore = create(
   )
 )
 
-// Listen to auth changes
-supabase.auth.onAuthStateChange(async (event, session) => {
-  const store = useAuthStore.getState()
-  
-  // Ignore events during initial store cleanup or if already initializing
-  if (!store.initialized && store.loading) return;
+// Helper to setup listener once
+let listenerStarted = false
+function setupAuthListener(set, get) {
+  if (listenerStarted) return
+  listenerStarted = true
 
-  // Only handle major events to avoid flickering during INITIAL_SESSION or redundant triggers
-  if (event === 'SIGNED_IN' && session) {
-    if (store.session?.access_token === session.access_token && store.user) return;
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    const store = get()
     
-    store.setLoading(true)
-    store.setSession(session)
-    try {
-      const user = await getCurrentUser()
-      store.setUser(user)
-    } catch (error) {
-      console.error('Failed to fetch user on auth change:', error)
-    } finally {
-      store.setLoading(false)
+    // Ignore events if we're in the middle of a manual login/logout to prevent collisions
+    if (store.initializing) return;
+
+    if (event === 'SIGNED_IN' && session) {
+      if (store.session?.access_token === session.access_token && store.user) return;
+      
+      set({ session })
+      try {
+        const user = await getCurrentUser()
+        if (user) set({ user })
+      } catch (error) {
+        console.error('Failed to fetch user on auth change:', error)
+      }
+    } else if (event === 'SIGNED_OUT') {
+      set({ user: null, session: null, loading: false })
     }
-  } else if (event === 'SIGNED_OUT') {
-    store.logout()
-    store.setLoading(false)
-  }
-})
+  })
+}
