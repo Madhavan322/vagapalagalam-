@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Search, Smile, Send } from 'lucide-react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
 import { useSEO } from '../hooks/useSEO'
@@ -64,10 +64,11 @@ export default function Messages() {
   const { userId } = useParams()
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
   useSEO('Messages', 'Secure real-time chat with your community.')
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
-  const [activeUser, setActiveUser] = useState(null)
+  const [activeUser, setActiveUser] = useState(location.state?.otherUser || null)
   const [text, setText] = useState('')
   const [typing, setTyping] = useState(false)
   const [loading, setLoading] = useState(true)

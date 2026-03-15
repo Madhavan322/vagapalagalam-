@@ -292,7 +292,7 @@ export default function Profile() {
               className="flex-1 py-2.5" 
               onToggle={(isFollowing) => setCounts(c => ({ ...c, followers: c.followers + (isFollowing ? 1 : -1) }))} 
             />
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate(`/messages/${targetId}`)}
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate(`/messages/${targetId}`, { state: { otherUser: profile } })}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-display tracking-wider btn-ghost">
               <MessageSquare size={14} /> MESSAGE
             </motion.button>
