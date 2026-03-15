@@ -72,9 +72,12 @@ export default function Messages() {
   const [text, setText] = useState('')
   const [typing, setTyping] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showEmoji, setShowEmoji] = useState(false)
   const bottomRef = useRef(null)
   const typingTimeout = useRef(null)
   const channelRef = useRef(null)
+
+  const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
   useEffect(() => {
     fetchConversations()
@@ -97,6 +100,21 @@ export default function Messages() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
+        />
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          Authenticating neural link...
+        </p>
+      </div>
+    )
+  }
 
   const fetchConversations = async () => {
     if (!user?.id) return
@@ -244,6 +262,11 @@ export default function Messages() {
     typingTimeout.current = setTimeout(() => setTyping(false), 2000)
   }
 
+  const addEmoji = (emoji) => {
+    setText(prev => prev + emoji)
+    setShowEmoji(false)
+  }
+
   if (!userId) {
     // Conversation list
     return (
@@ -302,21 +325,6 @@ export default function Messages() {
             ))}
           </div>
         )}
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-10rem)]">
-        <motion.div 
-          animate={{ rotate: 360 }} 
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-10 h-10 rounded-full border-2 border-accent-primary/20 border-t-accent-primary mb-4" 
-        />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Authenticating neural link...
-        </p>
       </div>
     )
   }
@@ -381,9 +389,36 @@ export default function Messages() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Emoji Picker */}
+      <AnimatePresence>
+        {showEmoji && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            className="absolute bottom-20 left-4 z-50 glass-strong p-3 rounded-2xl grid grid-cols-6 gap-2 border border-accent-primary/20 shadow-neon-primary"
+          >
+            {emojis.map(e => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => addEmoji(e)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors text-lg"
+              >
+                {e}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input */}
       <form onSubmit={sendMessage} className="glass-strong flex items-center gap-3 p-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
-        <button type="button" style={{ color: 'var(--accent-primary)', opacity: 0.6 }}>
+        <button 
+          type="button" 
+          onClick={() => setShowEmoji(!showEmoji)}
+          style={{ color: 'var(--accent-primary)', opacity: showEmoji ? 1 : 0.6 }}
+        >
           <Smile size={20} />
         </button>
         <input
