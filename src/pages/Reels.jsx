@@ -161,7 +161,7 @@ export default function Reels() {
 
   useEffect(() => {
     fetchReels()
-  }, [])
+  }, [user?.id])
 
   const fetchReels = async () => {
     let specificReel = null

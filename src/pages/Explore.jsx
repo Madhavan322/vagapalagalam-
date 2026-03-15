@@ -21,8 +21,11 @@ export default function Explore() {
 
   useEffect(() => {
     fetchTrending()
-    fetchSuggestions()
   }, [])
+
+  useEffect(() => {
+    if (user?.id) fetchSuggestions()
+  }, [user?.id])
 
   useEffect(() => {
     if (query) searchAll()

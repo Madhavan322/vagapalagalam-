@@ -58,18 +58,18 @@ export default function Messages() {
 
   useEffect(() => {
     fetchConversations()
-  }, [])
+  }, [user?.id])
 
   useEffect(() => {
-    if (userId) {
-      const cleanup = loadConversation(userId)
+    if (userId && user?.id) {
+      loadConversation(userId)
       return () => {
         if (channelRef.current) {
           supabase.removeChannel(channelRef.current)
         }
       }
     }
-  }, [userId])
+  }, [userId, user?.id])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
