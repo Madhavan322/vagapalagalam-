@@ -307,6 +307,6 @@ export default function Messages() {
           <Send size={16} className="text-white" />
         </motion.button>
       </form>
-    </div>
+    </motion.div>
   )
 }
