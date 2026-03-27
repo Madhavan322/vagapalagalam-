@@ -356,7 +356,7 @@ export default function Messages() {
         </button>
         {activeUser && (
           <>
-            <div className="avatar-ring">
+            <div className="avatar-ring" style={{ borderColor: 'rgba(100,116,139,0.2)' }}>
               <img src={activeUser.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${activeUser.username}`}
                 className="w-9 h-9 rounded-full object-cover" />
             </div>
