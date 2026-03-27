@@ -288,7 +288,21 @@ body {
 [data-theme='light'] .text-primary { color: #0f172a; }
 [data-theme='light'] .text-secondary { color: #475569; }
 [data-theme='light'] .text-faint { color: #94a3b8; }
-[data-theme='light'] .text-gradient { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
+[data-theme='light'] .text-gradient {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 2px rgba(15, 23, 42, 0.5);
+}
+[data-theme='light'] .text-gradient-strong {
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  color: var(--text-primary);
+  text-shadow: none;
+}
 [data-theme='light'] .explore-grid > * {
   background: var(--bg-card);
   border: 1px solid rgba(100, 116, 139, 0.12);

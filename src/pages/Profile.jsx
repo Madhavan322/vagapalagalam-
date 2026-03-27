@@ -267,7 +267,7 @@ export default function Profile() {
           ].map(({ label, value }, i) => (
             <div key={label} className="flex-1 py-3 text-center"
               style={{ borderRight: i < 2 ? '1px solid var(--border-default)' : 'none' }}>
-              <p className="font-display font-bold text-lg text-gradient">{value}</p>
+              <p className="font-display font-bold text-lg text-gradient text-gradient-strong">{value}</p>
               <p className="text-xs tracking-wider font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>{label}</p>
             </div>
           ))}
