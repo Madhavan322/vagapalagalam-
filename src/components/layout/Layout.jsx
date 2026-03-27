@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, Compass, Play, MessageSquare, Bell, User, Plus } from 'lucide-react'
+import { Home, Compass, Play, MessageSquare, Bell, User, Plus, Sun, Moon } from 'lucide-react'
 import { useAuthStore } from '../../context/authStore'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../services/supabaseClient'
@@ -18,8 +18,25 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const [theme, setTheme] = useState('dark')
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [unreadNotifs, setUnreadNotifs] = useState(0)
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem('vaga-theme')
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+      setTheme(storedTheme)
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      setTheme('light')
+    } else {
+      setTheme('dark')
+    }
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    window.localStorage.setItem('vaga-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     if (!user) return
@@ -37,6 +54,14 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-void bg-grid relative overflow-x-hidden">
+      <button
+        onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+        className="fixed top-4 right-4 z-50 px-3 py-2 rounded-xl border border-white/20 shadow-lg backdrop-blur bg-black/30 text-sm font-medium text-white/90 hover:bg-white/20 transition-all"
+        aria-label="Toggle dark/light theme"
+      >
+        {theme === 'dark' ? <Sun size={16} className="inline mr-1" /> : <Moon size={16} className="inline mr-1" />}
+        {theme === 'dark' ? 'Light' : 'Dark'} mode
+      </button>
       {/* Main content */}
       <main className={`${hideNav ? '' : 'pb-24 pt-4 px-4 max-w-2xl mx-auto'}`}>
         <AnimatePresence mode="wait">
