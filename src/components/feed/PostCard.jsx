@@ -142,30 +142,32 @@ export default function PostCard({ post, onUpdate }) {
 
       {/* Media */}
       {post.media_url && (
-        <div className="relative">
+        <div
+          className={`post-media ${post.type === 'video' && !videoPlaying ? 'video-paused' : ''}`}
+          onClick={() => post.type === 'video' && setVideoPlaying(prev => !prev)}
+        >
           {post.type === 'video' ? (
-            <div className="relative cursor-pointer" onClick={() => setVideoPlaying(!videoPlaying)}>
+            <>
               <video
                 src={post.media_url}
-                className="w-full max-h-96 object-cover"
+                className="w-full h-full"
                 loop
                 playsInline
-                preload="metadata"
-                ref={el => el && (videoPlaying ? el.play() : el.pause())}
+                muted
+                controls={videoPlaying}
+                autoPlay={videoPlaying}
               />
-              {!videoPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center glass glow-purple">
-                    <Play size={24} style={{ color: 'var(--accent-primary)' }} />
-                  </div>
+              <div className="video-play-overlay">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center glass glow-purple">
+                  <Play size={24} style={{ color: 'var(--accent-primary)' }} />
                 </div>
-              )}
-            </div>
+              </div>
+            </>
           ) : (
             <img
               src={post.media_url}
               alt="Post"
-              className="w-full max-h-96 object-cover"
+              className="w-full h-full"
               loading="lazy"
             />
           )}
