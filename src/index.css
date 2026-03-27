@@ -191,19 +191,9 @@ body {
 .orb-purple { background: radial-gradient(circle, rgba(191, 0, 255, 0.15), transparent 70%); }
 .orb-pink { background: radial-gradient(circle, rgba(255, 0, 110, 0.12), transparent 70%); }
 
-/* ═══ Scan Line — Subtler ═══ */
-@keyframes scanLine {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
+/* ═══ Scan Line — Subtler (removed) ═══ */
 .scan-line {
-  position: fixed;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.06), transparent);
-  animation: scanLine 12s linear infinite;
-  pointer-events: none;
-  z-index: 1000;
+  display: none;
 }
 
 /* ═══ Navigation Dock ═══ */

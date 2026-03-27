@@ -100,7 +100,6 @@ export default function App() {
           </div>
         </div>
       )}
-      <div className="scan-line" />
       <div className="orb orb-cyan" style={{ width: '600px', height: '600px', top: '-200px', left: '-200px' }} />
       <div className="orb orb-purple" style={{ width: '500px', height: '500px', bottom: '-100px', right: '-100px' }} />
       <div className="orb orb-pink" style={{ width: '300px', height: '300px', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
