@@ -1,42 +1,36 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        void: '#040408',
-        surface: '#0a0a12',
-        panel: '#0f0f1a',
-        border: '#1a1a2e',
-        neon: {
-          cyan: '#00f5ff',
-          purple: '#bf00ff',
-          pink: '#ff006e',
-          green: '#00ff88',
+        'void': '#040408',
+        'nebula': '#0f0f1a',
+        'mystic': '#1a1a2e',
+        'accent': {
+          'primary': '#6366f1',
+          'secondary': '#a855f7',
+          'glow': '#ec4899',
+          'nebula': '#8b5cf6'
         }
       },
-      fontFamily: {
-        display: ['Orbitron', 'monospace'],
-        body: ['Syne', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'space-gradient': 'linear-gradient(to bottom, #040408, #0f0f1a, #1a1a2e)',
       },
       animation: {
-        'pulse-neon': 'pulseNeon 2s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'spin-slow': 'spin 8s linear infinite',
         'float': 'float 6s ease-in-out infinite',
-        'scan': 'scan 3s linear infinite',
       },
       keyframes: {
-        pulseNeon: {
-          '0%, 100%': { boxShadow: '0 0 5px #00f5ff, 0 0 10px #00f5ff' },
-          '50%': { boxShadow: '0 0 20px #00f5ff, 0 0 40px #00f5ff, 0 0 80px #00f5ff' },
-        },
         float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-        },
-        scan: {
-          '0%': { top: '0%' },
-          '100%': { top: '100%' },
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
         }
       }
     },
