@@ -36,7 +36,7 @@ export default function Home() {
       let query = supabase
         .from('posts')
         .select(`
-          *,
+          id, user_id, caption, media_url, type, created_at,
           users(id, username, avatar),
           likes(user_id),
           comments(id, text, user_id, created_at, users(username, avatar))

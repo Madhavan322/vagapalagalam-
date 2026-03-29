@@ -54,14 +54,16 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-void bg-grid relative overflow-x-hidden">
-      <button
-        onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-        className="fixed top-4 right-4 z-50 px-3 py-2 rounded-xl border border-white/20 shadow-lg backdrop-blur bg-black/30 text-sm font-medium text-white/90 hover:bg-white/20 transition-all"
-        aria-label="Toggle dark/light theme"
-      >
-        {theme === 'dark' ? <Sun size={16} className="inline mr-1" /> : <Moon size={16} className="inline mr-1" />}
-        {theme === 'dark' ? 'Light' : 'Dark'} mode
-      </button>
+      {!isReels && (
+        <button
+          onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+          className="fixed top-4 right-4 z-50 px-3 py-2 rounded-xl border border-white/20 shadow-lg backdrop-blur bg-black/30 text-sm font-medium text-white/90 hover:bg-white/20 transition-all font-display tracking-widest"
+          aria-label="Toggle dark/light theme"
+        >
+          {theme === 'dark' ? <Sun size={14} className="inline mr-1 text-amber-400" /> : <Moon size={14} className="inline mr-1 text-zinc-100" />}
+          {theme === 'dark' ? 'LIGHT' : 'DARK'}
+        </button>
+      )}
       {/* Main content */}
       <main className={`${hideNav ? '' : 'pb-24 pt-4 px-4 max-w-2xl mx-auto'}`}>
         <AnimatePresence mode="wait">

@@ -46,7 +46,7 @@ function CommentPanel({ postId, onClose }) {
       const { error } = await supabase.from('comments').insert({
         post_id: postId,
         user_id: user.id,
-        content
+        text: content
       })
       if (error) throw error
       fetchComments()
@@ -337,7 +337,7 @@ export default function Reels() {
     const { data } = await withTimeout(
       supabase
         .from('posts')
-        .select(`*, users(id, username, avatar), likes(user_id), comments(id)`)
+        .select(`id, user_id, caption, media_url, type, created_at, users(id, username, avatar), likes(user_id), comments(id)`)
         .eq('type', 'video')
         .order('created_at', { ascending: false })
         .range(pageNum * 10, (pageNum + 1) * 10 - 1),
