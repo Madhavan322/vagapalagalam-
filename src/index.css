@@ -97,7 +97,30 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* ═══ Scrollbar ═══ */
+/* ═══ Message Bubbles (Adaptive) ═══ */
+
+.msg-sent {
+  background: linear-gradient(135deg, var(--accent-primary), #00a8ff);
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(0, 245, 255, 0.2);
+}
+
+.msg-received {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .msg-sent {
+  background: linear-gradient(135deg, #0057ff, #0042cc);
+  box-shadow: 0 4px 12px rgba(0, 87, 255, 0.15);
+}
+
+[data-theme='light'] .msg-received {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-void); }
 ::-webkit-scrollbar-thumb {

@@ -325,46 +325,50 @@ export default function Messages() {
   }
 
   const renderSidebar = () => (
-    <div className={`flex flex-col h-full bg-void/50 ${userId ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-white/5 relative z-10`}>
-      <div className="p-4 border-b border-white/5">
+    <div className={`flex flex-col h-full bg-surface ${userId ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-subtle relative z-10`} style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="p-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
         <h1 className="font-display text-sm font-bold tracking-widest text-gradient mb-4">MESSAGES</h1>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-accent-primary opacity-50" />
-          <input className="cyber-input w-full pl-9 pr-4 py-2 text-xs" placeholder="Search people..." />
+          <input className="cyber-input w-full pl-9 pr-4 py-2 text-xs" placeholder="Search people..." style={{ backgroundColor: 'var(--bg-void)', borderColor: 'var(--border-default)' }} />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {loading ? (
           [...Array(5)].map((_, i) => (
-            <div key={i} className="p-3 rounded-xl card-glass animate-pulse flex gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/5" />
+            <div key={i} className="p-3 rounded-xl animate-pulse flex gap-3" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+              <div className="w-10 h-10 rounded-full" style={{ backgroundColor: 'var(--bg-hover)' }} />
               <div className="flex-1 space-y-2">
-                <div className="h-2.5 w-20 bg-white/10 rounded" />
-                <div className="h-2 w-32 bg-white/5 rounded" />
+                <div className="h-2.5 w-20 rounded" style={{ backgroundColor: 'var(--bg-hover)' }} />
+                <div className="h-2 w-32 roundedOpacity-50" style={{ backgroundColor: 'var(--bg-hover)' }} />
               </div>
             </div>
           ))
         ) : conversations.length === 0 ? (
-          <div className="p-8 text-center opacity-50 text-xs font-mono py-20">NO CONVERSATIONS</div>
+          <div className="p-8 text-center text-xs font-mono py-20" style={{ color: 'var(--text-muted)' }}>NO CONVERSATIONS</div>
         ) : (
           conversations.map(conv => (
             <div
               key={conv.id}
               onClick={() => navigate(`/messages/${conv.id}`)}
-              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-white/5 ${userId === conv.id ? 'bg-white/10 border-r-2 border-accent-primary' : 'border border-transparent'}`}
+              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${userId === conv.id ? 'active-conv' : 'hover:bg-hover'}`}
+              style={{ 
+                backgroundColor: userId === conv.id ? 'var(--bg-hover)' : 'transparent',
+                borderRight: userId === conv.id ? '2px solid var(--accent-primary)' : 'none'
+              }}
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0" style={{ border: '1px solid var(--border-subtle)' }}>
                 <img src={conv.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${conv.username}`} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate" style={{ color: userId === conv.id ? 'var(--accent-primary)' : 'var(--text-primary)' }}>{conv.username}</p>
-                <p className="text-[10px] truncate opacity-60" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
                   {conv.lastMsg?.message || 'No messages'}
                 </p>
               </div>
               {conv.lastMsg && (
-                <span className="text-[10px] opacity-40 font-mono">
+                <span className="text-[10px] font-mono" style={{ color: 'var(--text-faint)' }}>
                   {formatDistanceToNow(new Date(conv.lastMsg.created_at), { addSuffix: false })}
                 </span>
               )}
@@ -376,7 +380,7 @@ export default function Messages() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] overflow-hidden bg-void relative">
+    <div className="flex h-[calc(100vh-2rem)] overflow-hidden relative" style={{ backgroundColor: 'var(--bg-void)' }}>
       {renderSidebar()}
       
       <div className={`flex-1 flex flex-col bg-grid relative z-40 ${!userId ? 'hidden lg:flex' : 'flex'}`}>
@@ -393,13 +397,13 @@ export default function Messages() {
             className="flex flex-col h-full overflow-hidden"
           >
             {/* Header */}
-            <div className="glass-strong flex items-center gap-3 px-4 py-3 border-b border-white/5">
-              <button onClick={() => navigate('/messages')} className="lg:hidden p-2 hover:bg-white/5 rounded-full transition-colors">
+            <div className="glass-strong flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+              <button onClick={() => navigate('/messages')} className="p-2 hover:bg-hover rounded-full transition-colors lg:hidden">
                 <ArrowLeft size={18} />
               </button>
               {activeUser && (
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full overflow-hidden border border-accent-primary/20">
+                  <div className="w-9 h-9 rounded-full overflow-hidden" style={{ border: '1px solid var(--border-subtle)' }}>
                     <img src={activeUser.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${activeUser.username}`} className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -416,9 +420,9 @@ export default function Messages() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {loadingChat && messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full opacity-30">
-                  <div className="skeleton-msg-received mb-4" />
-                  <div className="skeleton-msg-sent mb-4 self-end" />
-                  <div className="skeleton-msg-received" />
+                  <div className="skeleton h-12 w-48 rounded-2xl mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+                  <div className="skeleton h-12 w-48 rounded-2xl mb-4 self-end" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+                  <div className="skeleton h-12 w-48 rounded-2xl" style={{ backgroundColor: 'var(--bg-elevated)' }} />
                 </div>
               ) : (
                 <AnimatePresence>
@@ -434,19 +438,19 @@ export default function Messages() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl border shadow-xl group relative ${isMine ? 'msg-sent border-accent-primary/20' : 'msg-received border-white/5'}`}>
+                        <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl group relative ${isMine ? 'msg-sent' : 'msg-received'}`}>
                           {isShare && (type === 'reel' || type === 'post') && <SharedContent contentId={id} />}
                           <div className="flex justify-between items-start gap-3">
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap flex-1" style={{ color: 'var(--text-primary)' }}>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap flex-1">
                               {isShare ? `Shared a ${type}` : msg.message}
                             </p>
                             {isMine && (
-                              <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-60 transition-opacity p-1 -mr-2 text-faint hover:text-red-500">
+                              <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-2 hover:text-red-300">
                                 <Trash2 size={12} />
                               </button>
                             )}
                           </div>
-                          <p className="text-[9px] mt-1.5 opacity-30 text-right">{formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}</p>
+                          <p className="text-[9px] mt-1.5 opacity-60 text-right">{formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}</p>
                         </div>
                       </motion.div>
                     )
@@ -465,15 +469,16 @@ export default function Messages() {
               )}
             </AnimatePresence>
 
-            <form onSubmit={sendMessage} className="p-4 bg-void/50 border-t border-white/5 flex items-center gap-3">
+            <form onSubmit={sendMessage} className="p-4 border-t flex items-center gap-3" style={{ borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
               <button 
                 type="button" 
                 onClick={() => setShowEmoji(!showEmoji)}
-                className={`p-2 rounded-xl hover:bg-white/5 transition-colors ${showEmoji ? 'text-accent-primary' : 'text-muted'}`}
+                className={`p-2 rounded-xl hover:bg-hover transition-colors ${showEmoji ? 'text-accent-primary' : ''}`}
+                style={{ color: showEmoji ? 'var(--accent-primary)' : 'var(--text-muted)' }}
               >
                 <Smile size={20} />
               </button>
-              <input value={text} onChange={handleTyping} placeholder="Write a message..." className="cyber-input flex-1 px-4 py-2.5 text-sm" />
+              <input value={text} onChange={handleTyping} placeholder="Write a message..." className="cyber-input flex-1 px-4 py-2.5 text-sm" style={{ backgroundColor: 'var(--bg-void)' }} />
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="submit" className="w-10 h-10 rounded-xl flex items-center justify-center btn-gradient text-white shadow-neon-primary">
                 <Send size={16} />
               </motion.button>
