@@ -35,6 +35,21 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchNotifs()
+
+    if (!user?.id) return;
+    const channel = supabase.channel(`notifs-live-${user.id}`)
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, () => fetchNotifs())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => fetchNotifs())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'followers' }, () => fetchNotifs())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        if (payload.new.receiver_id === user.id) fetchNotifs()
+      })
+      .subscribe()
+    
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [user?.id])
 
   const fetchNotifs = async () => {

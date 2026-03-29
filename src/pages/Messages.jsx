@@ -82,6 +82,11 @@ export default function Messages() {
   const bottomRef = useRef(null)
   const typingTimeout = useRef(null)
   const channelRef = useRef(null)
+  const activeUserIdRef = useRef(userId)
+
+  useEffect(() => {
+    activeUserIdRef.current = userId;
+  }, [userId])
 
   const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
@@ -90,21 +95,47 @@ export default function Messages() {
   }, [session?.user?.id])
 
   useEffect(() => {
-    if (userId && session?.user?.id) {
+    if (userId && currentUserId) {
       loadConversation(userId)
     } else if (!userId) {
       setActiveUser(null)
       setMessages([])
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current)
-        } catch (e) {
-          console.warn('Channel cleanup error:', e)
-        }
-        channelRef.current = null
-      }
     }
-  }, [userId, session?.user?.id])
+  }, [userId, currentUserId])
+
+  // Persistent Single Channel for the whole page
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const channel = supabase.channel(`messages-main-${currentUserId}`)
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const { sender_id, receiver_id } = payload.new;
+        if (sender_id !== currentUserId && receiver_id !== currentUserId) return;
+
+        const otherId = activeUserIdRef.current;
+        const isCurrentChat = (sender_id === otherId && receiver_id === currentUserId) || 
+                             (sender_id === currentUserId && receiver_id === otherId);
+
+        if (isCurrentChat) {
+          setMessages(prev => {
+            if (prev.some(m => m.id === payload.new.id)) return prev;
+            return [...prev, payload.new];
+          });
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+        fetchConversations();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
+        setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+        fetchConversations();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
+  }, [currentUserId])
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -178,65 +209,8 @@ export default function Messages() {
       if (userError) throw userError
       setActiveUser(userInfo)
 
-      const { data: initialMessages, error: msgError } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
-        .order('created_at', { ascending: true })
-      
       if (msgError) throw msgError
       setMessages(initialMessages || [])
-
-      // Cleanup previous subscription precisely
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-
-      // Subscribe to all message changes for the user
-      const channel = supabase.channel(`chat-main-${currentUserId}`)
-      channel
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages'
-        },
-        (payload) => {
-          const { sender_id, receiver_id } = payload.new;
-          const isRelated = sender_id === currentUserId || receiver_id === currentUserId;
-          if (!isRelated) return;
-
-          // If the message is part of the ACTIVE conversation, update messages state
-          const isCurrentChat = (sender_id === otherUserId && receiver_id === currentUserId) || 
-                               (sender_id === currentUserId && receiver_id === otherUserId);
-          
-          if (isCurrentChat) {
-            setMessages(prev => {
-              if (prev.some(m => m.id === payload.new.id)) return prev;
-              const newMsgs = [...prev, payload.new];
-              // Trigger scroll to bottom
-              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-              return newMsgs;
-            });
-          }
-          
-          // Always refresh conversation sidebar for any related message
-          fetchConversations();
-        })
-        .on('postgres_changes', {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-          fetchConversations();
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            channelRef.current = channel;
-          }
-        });
 
 
     } catch (e) {
