@@ -43,20 +43,25 @@ export const useAuthStore = create(
 
           // If the session check returned an error (like Refresh Token Not Found)
           if (error) {
-            if (error.message?.includes('Refresh Token Not Found') || error.status === 400) {
-              console.warn('Auth session expired or invalid. Resetting state.')
-              set({ session: null, user: null, loading: false })
-              set({ initialized: true, initializing: false })
-              return
+            const isInvalidToken = error.message?.includes('Refresh Token Not Found') || 
+                                 error.status === 400 || 
+                                 error.code === 'refresh_token_not_found';
+            
+            if (isInvalidToken) {
+              console.warn('Auth session invalid (Status 400). Wiping stale localStorage.');
+              // Manually wipe the persistence key to prevent re-loading on next refresh
+              localStorage.removeItem('vangapalagalam-auth');
+              set({ session: null, user: null, loading: false, initialized: true, initializing: false });
+              return;
             }
-            throw error
+            throw error;
           }
 
           if (session) {
-            set({ session })
-            set({ loading: false })
+            set({ session });
+            set({ loading: false });
             
-            // Background profile fetch
+            // Background profile fetch - if this fails with 401/403, we might need to wipe too
             getCurrentUser().then(user => {
               if (user) set({ user })
             }).catch(err => {
