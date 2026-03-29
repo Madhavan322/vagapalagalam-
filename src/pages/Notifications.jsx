@@ -38,68 +38,109 @@ export default function Notifications() {
   }, [user?.id])
 
   const fetchNotifs = async () => {
-    if (!user) {
-      setLoading(false)
-      return
-    }
+    if (!user) return setLoading(false)
     setLoading(true)
     try {
+      // 1. Follows
       const { data: follows } = await supabase
         .from('followers')
         .select('created_at, follower:follower_id(id, username, avatar)')
-        .eq('following_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
+        .eq('following_id', user.id)
+        .order('created_at', { ascending: false }).limit(10)
 
-      // 2. Fetch notifications for likes on user's posts
-      const { data: myPosts } = await withTimeout(
-        supabase.from('posts').select('id').eq('user_id', user.id),
-        10000
-      ).catch(() => ({ data: [] }))
-      
+      // 2. My Post IDs (for likes/comments)
+      const { data: myPosts } = await supabase.from('posts').select('id, caption').eq('user_id', user.id)
       const postIds = myPosts?.map(p => p.id) || []
       
       let likeNotifs = []
+      let commentNotifs = []
+
       if (postIds.length > 0) {
-        const { data: likes } = await withTimeout(
-          supabase
-            .from('likes')
-            .select('created_at, user:user_id(id, username, avatar), posts(id, caption)')
-            .in('post_id', postIds)
-            .order('created_at', { ascending: false })
-            .limit(10),
-          15000
-        ).catch(() => ({ data: [] }))
+        // Likes
+        const { data: likes } = await supabase
+          .from('likes')
+          .select('created_at, user:user_id(id, username, avatar), post_id')
+          .in('post_id', postIds).limit(20)
         
         likeNotifs = (likes || []).map(l => ({
-          id:       `like-${l.user.id}-${l.created_at}`,
-          type:     'like',
+          id: `like-${l.user.id}-${l.created_at}`,
+          type: 'like',
           username: l.user.username,
-          avatar:   l.user.avatar,
-          userId:   l.user.id,
-          text:     `liked your post: "${l.posts?.caption?.slice(0, 20)}..."`,
-          time:     l.created_at,
-          read:     false,
+          avatar: l.user.avatar,
+          userId: l.user.id,
+          text: `liked your post: "${myPosts.find(p => p.id === l.post_id)?.caption?.slice(0,15)}..."`,
+          time: l.created_at,
+          read: false,
+          targetId: l.post_id
+        }))
+
+        // Comments
+        const { data: comments } = await supabase
+          .from('comments')
+          .select('created_at, user:user_id(id, username, avatar), text, post_id')
+          .in('post_id', postIds).limit(20)
+
+        commentNotifs = (comments || []).map(c => ({
+          id: `comment-${c.user.id}-${c.created_at}`,
+          type: 'comment',
+          username: c.user.username,
+          avatar: c.user.avatar,
+          userId: c.user.id,
+          text: `commented: "${c.text.slice(0, 20)}..."`,
+          time: c.created_at,
+          read: false,
+          targetId: c.post_id
         }))
       }
 
-      const followNotifs = (follows || []).map(f => ({
-        id:       `follow-${f.follower.id}-${f.created_at}`,
-        type:     'follow',
-        username: f.follower.username,
-        avatar:   f.follower.avatar,
-        userId:   f.follower.id,
-        text:     'started following you',
-        time:     f.created_at,
-        read:     false,
+      // 3. Messages
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('created_at, sender:sender_id(id, username, avatar), message')
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false }).limit(15)
+
+      const msgNotifs = (msgs || []).map(m => ({
+        id: `msg-${m.sender.id}-${m.created_at}`,
+        type: 'message',
+        username: m.sender.username,
+        avatar: m.sender.avatar,
+        userId: m.sender.id,
+        text: `sent you a message: "${m.message.slice(0, 20)}..."`,
+        time: m.created_at,
+        read: false,
+        targetId: m.sender.id
       }))
 
-      setNotifs([...followNotifs, ...likeNotifs])
-    } catch {
+      // 4. Followers (Final Mapping)
+      const followNotifs = (follows || []).map(f => ({
+        id: `follow-${f.follower.id}-${f.created_at}`,
+        type: 'follow',
+        username: f.follower.username,
+        avatar: f.follower.avatar,
+        userId: f.follower.id,
+        text: 'started following you',
+        time: f.created_at,
+        read: false
+      }))
+
+      // Merge and Sort
+      const all = [...followNotifs, ...likeNotifs, ...commentNotifs, ...msgNotifs]
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+      
+      setNotifs(all)
+    } catch (e) {
+      console.error('Fetch notifs failed:', e)
       setNotifs(SEED_NOTIFS)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleNotifClick = (n) => {
+    if (n.type === 'message') navigate(`/messages/${n.targetId}`)
+    else if (n.type === 'like' || n.type === 'comment') navigate(`/home?post=${n.targetId}`)
+    else if (n.userId) navigate(`/profile/${n.userId}`)
   }
 
   const markAllRead = () =>
@@ -179,7 +220,7 @@ export default function Notifications() {
                 <motion.div key={n.id}
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }} transition={{ delay: i * 0.04 }}
-                  onClick={() => n.userId && navigate(`/profile/${n.userId}`)}
+                  onClick={() => handleNotifClick(n)}
                   className="flex items-center gap-3 p-4 rounded-xl transition-all cursor-pointer"
                   style={{
                     background: n.read ? 'var(--bg-surface)' : 'var(--bg-card)',
