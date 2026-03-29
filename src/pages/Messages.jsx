@@ -209,6 +209,12 @@ export default function Messages() {
       if (userError) throw userError
       setActiveUser(userInfo)
 
+      const { data: initialMessages, error: msgError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
+        .order('created_at', { ascending: true })
+      
       if (msgError) throw msgError
       setMessages(initialMessages || [])
 
