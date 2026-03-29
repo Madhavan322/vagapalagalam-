@@ -32,19 +32,34 @@ export default function Home() {
       else setLoadingMore(true)
 
       // Global feed — show ALL posts from ALL users
-      const { data, error } = await withTimeout(
-        supabase
+      // Attempt join first, fallback to simpler query if it fails (Safe Mode)
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          users(id, username, avatar),
+          likes(user_id),
+          comments(id, text, user_id, created_at, users(username, avatar))
+        `)
+        .order('created_at', { ascending: false })
+        .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1)
+
+      let { data, error } = await withTimeout(query, 15000).catch(() => ({ data: null, error: { code: '500' } }))
+
+      // SAFE MODE FALLBACK: If join fails (e.g. recursion error), fetch WITHOUT joins
+      if (error && (error.code === '42P17' || error.message?.includes('infinite recursion'))) {
+        console.warn('Infinite recursion detected. Switching to Safe Mode (fetch without joins).')
+        const { data: simpleData, error: simpleError } = await supabase
           .from('posts')
-          .select(`
-            *,
-            users(id, username, avatar),
-            likes(user_id),
-            comments(id, text, user_id, created_at, users(username, avatar))
-          `)
+          .select('*')
           .order('created_at', { ascending: false })
-          .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1),
-        15000
-      ).catch(err => ({ data: [], error: err }))
+          .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1)
+        
+        if (!simpleError) {
+          data = simpleData
+          error = null
+        }
+      }
 
       if (error) throw error
 

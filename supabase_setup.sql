@@ -202,5 +202,45 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- =====================================================
--- ALL DONE ✅
+-- 🛠️ NUCLEAR REPAIR: DATA VISIBILITY & RECURSION WIPE
 -- =====================================================
+-- Run this block if you see "infinite recursion detected in policy" or 500 errors.
+-- These blocks dynamically find and delete ALL policies on the core tables.
+
+-- 1. DYNAMICALLY DROP ALL POLICIES ON USERS
+DO $$ 
+DECLARE 
+    pol record;
+BEGIN 
+    FOR pol IN SELECT policyname FROM pg_policies WHERE tablename = 'users' AND schemaname = 'public' LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.users', pol.policyname);
+    END LOOP;
+END $$;
+
+-- 2. DYNAMICALLY DROP ALL POLICIES ON MESSAGES (and restore keys)
+DO $$ 
+DECLARE 
+    pol record;
+BEGIN 
+    FOR pol IN SELECT policyname FROM pg_policies WHERE tablename = 'messages' AND schemaname = 'public' LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.messages', pol.policyname);
+    END LOOP;
+END $$;
+
+-- 3. RE-ENABLE FRESH, NON-RECURSIVE POLICIES
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "safe_read_users" ON public.users FOR SELECT USING (true);
+CREATE POLICY "safe_insert_users" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "safe_update_users" ON public.users FOR UPDATE USING (auth.uid() = id);
+
+-- 4. FIX MESSAGES RELATIONSHIPS & POLICIES
+ALTER TABLE public.messages DROP CONSTRAINT IF EXISTS messages_sender_id_fkey;
+ALTER TABLE public.messages DROP CONSTRAINT IF EXISTS messages_receiver_id_fkey;
+ALTER TABLE public.messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE public.messages ADD CONSTRAINT messages_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "safe_read_messages" ON public.messages FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "safe_insert_messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
