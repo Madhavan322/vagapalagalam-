@@ -177,7 +177,7 @@ function CommentPanel({ postId, onClose }) {
   )
 }
 
-function ReelItem({ reel, isActive, shouldLoad }) {
+function ReelItem({ reel, isActive, shouldLoad, isNearby }) {
   const { user } = useAuthStore()
   const videoRef = useRef(null)
   const [muted, setMuted] = useState(false)
@@ -258,7 +258,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
               loop
               playsInline
               muted={muted}
-              preload={isActive ? "auto" : "metadata"}
+              preload={isActive ? "auto" : isNearby ? "metadata" : "none"}
               onWaiting={() => setIsBuffering(true)}
               onPlaying={() => setIsBuffering(false)}
               onCanPlay={() => setIsBuffering(false)}
@@ -533,6 +533,7 @@ export default function Reels() {
                 reel={reel} 
                 isActive={i === activeIndex} 
                 shouldLoad={Math.abs(i - activeIndex) <= 2}
+                isNearby={Math.abs(i - activeIndex) <= 1}
               />
             </div>
           ))}

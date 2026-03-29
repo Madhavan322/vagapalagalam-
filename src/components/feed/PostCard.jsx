@@ -66,6 +66,18 @@ export default function PostCard({ post, onUpdate }) {
     }
   }
 
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Delete this comment?')) return
+    try {
+      const { error } = await supabase.from('comments').delete().eq('id', commentId)
+      if (error) throw error
+      setComments(prev => prev.filter(c => c.id !== commentId))
+      toast.success('Comment deleted')
+    } catch (err) {
+      toast.error('Failed to delete comment')
+    }
+  }
+
   const handleShare = () => {
     setShowShare(true)
   }
@@ -253,16 +265,26 @@ export default function PostCard({ post, onUpdate }) {
                 </p>
               )}
               {comments.map(c => (
-                <div key={c.id} className="flex gap-2">
+                <div key={c.id} className="flex gap-2 group">
                   <img
                     src={c.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${c.users?.username}`}
                     className="w-6 h-6 rounded-full flex-shrink-0"
                   />
-                  <div>
-                    <span className="text-xs font-bold mr-2" style={{ color: 'var(--accent-primary)' }}>
-                      {c.users?.username}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{c.text}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
+                        {c.users?.username}
+                      </span>
+                      {user?.id === c.user_id && (
+                        <button 
+                          onClick={() => handleDeleteComment(c.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-faint hover:text-red-500 transition-all"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{c.text}</p>
                   </div>
                 </div>
               ))}

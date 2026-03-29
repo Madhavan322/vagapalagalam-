@@ -2,7 +2,7 @@ import { formatDistanceToNow } from 'date-fns'
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Search, Smile, Send } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Search, Smile, Send, Trash2 } from 'lucide-react'
 import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useAuthStore } from '../context/authStore'
@@ -210,6 +210,17 @@ export default function Messages() {
             fetchConversations();
           }
         })
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          // Remove from local messages if it matches
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          // Refresh conversation list to update last message if needed
+          fetchConversations();
+        })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             channelRef.current = channel;
@@ -273,6 +284,18 @@ export default function Messages() {
       console.error('Failed to send:', err)
       // Remove optimistic msg on error
       setMessages(prev => prev.filter(m => m.id !== tempId))
+    }
+  }
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Unsend this message?')) return
+    try {
+      const { error } = await supabase.from('messages').delete().eq('id', messageId)
+      if (error) throw error
+      setMessages(prev => prev.filter(m => m.id !== messageId))
+      fetchConversations() // update last message
+    } catch (e) {
+      console.error('Unsend failed:', e)
     }
   }
 
@@ -397,11 +420,21 @@ export default function Messages() {
                 animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] px-4 py-3 shadow-2xl backdrop-blur-xl rounded-2xl border ${isMine ? 'msg-sent border-accent-primary/30' : 'msg-received border-white/10'}`}>
+                <div className={`max-w-[85%] px-4 py-3 shadow-2xl backdrop-blur-xl rounded-2xl border group relative ${isMine ? 'msg-sent border-accent-primary/30' : 'msg-received border-white/10'}`}>
                   {isShare && type === 'reel' && <SharedReel reelId={id} />}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
-                    {isShare ? `Shared a ${type}` : msg.message}
-                  </p>
+                  <div className="flex justify-between items-start gap-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap flex-1" style={{ color: 'var(--text-primary)' }}>
+                      {isShare ? `Shared a ${type}` : msg.message}
+                    </p>
+                    {isMine && (
+                      <button 
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-1 -mr-2"
+                      >
+                        <Trash2 size={12} className="text-faint hover:text-red-500" />
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[10px] mt-1.5 font-mono opacity-50" style={{ color: 'var(--text-muted)' }}>
                     {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                   </p>
