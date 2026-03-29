@@ -244,3 +244,10 @@ ALTER TABLE public.messages ADD CONSTRAINT messages_receiver_id_fkey FOREIGN KEY
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "safe_read_messages" ON public.messages FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 CREATE POLICY "safe_insert_messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
+
+-- =====================================================
+-- ⚡ REALTIME ACTIVATION (MANDATORY)
+-- =====================================================
+-- Run this in your Supabase SQL Editor to enable instant chat sync.
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER TABLE public.messages REPLICA IDENTITY FULL;

@@ -185,30 +185,35 @@ export default function Messages() {
         channelRef.current = null
       }
 
-      // Subscribe to new messages for THIS specific conversation
-      const channel = supabase.channel(`chat-${currentUserId}-${otherUserId}`)
+      // Subscribe to all message changes for the user
+      const channel = supabase.channel(`chat-main-${currentUserId}`)
       channel
         .on('postgres_changes', { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id.eq.${currentUserId}`
+          table: 'messages'
         },
         (payload) => {
-          // Verify relevance in JS
-          const fromOther = payload.new.sender_id === otherUserId && payload.new.receiver_id === currentUserId;
+          const { sender_id, receiver_id } = payload.new;
+          const isRelated = sender_id === currentUserId || receiver_id === currentUserId;
+          if (!isRelated) return;
+
+          // If the message is part of the ACTIVE conversation, update messages state
+          const isCurrentChat = (sender_id === otherUserId && receiver_id === currentUserId) || 
+                               (sender_id === currentUserId && receiver_id === otherUserId);
           
-          if (fromOther) {
+          if (isCurrentChat) {
             setMessages(prev => {
               if (prev.some(m => m.id === payload.new.id)) return prev;
-              return [...prev, payload.new];
+              const newMsgs = [...prev, payload.new];
+              // Trigger scroll to bottom
+              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+              return newMsgs;
             });
-            // Update last message in conv list local state
-            updateConversationList(payload.new, userInfo);
-          } else {
-            // Message for a different conversation, just refresh list
-            fetchConversations();
           }
+          
+          // Always refresh conversation sidebar for any related message
+          fetchConversations();
         })
         .on('postgres_changes', {
           event: 'DELETE',
@@ -216,9 +221,7 @@ export default function Messages() {
           table: 'messages'
         },
         (payload) => {
-          // Remove from local messages if it matches
           setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-          // Refresh conversation list to update last message if needed
           fetchConversations();
         })
         .subscribe((status) => {
@@ -226,6 +229,7 @@ export default function Messages() {
             channelRef.current = channel;
           }
         });
+
 
     } catch (e) {
       console.error('Failed to load conversation:', e)

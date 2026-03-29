@@ -49,7 +49,7 @@ export default function ShareModal({ item, type = 'reel', onClose }) {
         created_at: new Date().toISOString()
       }))
 
-      const { error } = await supabase.from('messages').insert(messages)
+      const { error } = await supabase.from('messages').insert(messages).select()
       if (error) throw error
 
       toast.success(`Shared with ${selected.length} people!`)
