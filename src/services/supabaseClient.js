@@ -1,117 +1,39 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pzyvwakizibzrnyginst.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eXZ3YWtpemlienJueWdpbnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzcyNjIsImV4cCI6MjA4ODk1MzI2Mn0.UYVaKapwNhzzrZ96djCILfl38sSCVK1yHNJXQoUnijI'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 
-export const isConfigMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || supabaseUrl.includes('your-project')
-
-if (isConfigMissing) {
-  console.error('❌ SUPABASE CONFIGURATION MISSING: \n' +
-    'Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel Environment Variables.\n' +
-    'Guide: https://vercel.com/docs/projects/environment-variables')
-}
-
-export const supabase = createClient(
-  supabaseUrl, 
-  supabaseAnonKey, 
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      storageKey: 'vp-auth-token',
-      flowType: 'pkce'
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10
-      }
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
     }
   }
-)
-
-// Auth helpers with timeout
-export const withTimeout = (promise, ms = 60000, errorMsg = 'Connection timed out (Vercel Cold Start or Network). Please try again.') => {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
-  });
-
-  return Promise.race([
-    promise.then(result => {
-      clearTimeout(timeoutId);
-      return result;
-    }).catch(err => {
-      clearTimeout(timeoutId);
-      throw err;
-    }),
-    timeoutPromise
-  ]);
-}
-
-// Retry helper with AbortError awareness
-export const withRetry = async (fn, retries = 3, delay = 1500) => {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn()
-    } catch (err) {
-      // Don't retry if the lock was stolen or request aborted - another request is already handling it
-      if (err.name === 'AbortError' || err.message?.includes('Lock broken')) {
-        console.warn('Auth lock stolen, skipping retry.')
-        throw err
-      }
-      if (i === retries) throw err
-      console.warn(`Retry ${i + 1} failed, waiting ${delay}ms...`)
-      await new Promise(resolve => setTimeout(resolve, delay))
-    }
-  }
-}
+})
 
 // Auth helpers
 export const signUp = async (email, password, username) => {
-  console.log('Attempting to create account for:', email)
-  try {
-    const { data, error } = await withTimeout(
-      supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: { username }
-        }
-      }),
-      60000,
-      'Account creation timed out. Your connection might be slow. Please try again.'
-    )
-    if (error) {
-      console.error('Supabase Sign Up Error:', error)
-      throw error
+  const { data, error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      data: { username }
     }
-    console.log('Account created successfully!')
-    return data
-  } catch (error) {
-    console.error('Sign Up failed:', error)
-    throw error
-  }
+  })
+  if (error) throw error
+  // Profile will be created automatically by trigger
+  return data
 }
 
 export const signIn = async (email, password) => {
-  console.log('Attempting sign in for:', email)
-  try {
-    const { data, error } = await withTimeout(
-      supabase.auth.signInWithPassword({ email, password }),
-      45000,
-      'Login timed out. Please check your internet connection and try again.'
-    )
-    if (error) {
-      console.error('Supabase Sign In Error:', error)
-      throw error
-    }
-    console.log('Signed in successfully!')
-    return data
-  } catch (error) {
-    console.error('Sign In failed:', error)
-    throw error
-  }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  return data
 }
 
 export const signOut = async () => {
@@ -119,68 +41,35 @@ export const signOut = async () => {
   if (error) throw error
 }
 
-let userFetchPromise = null
-
 export const getCurrentUser = async () => {
-  if (userFetchPromise) return userFetchPromise
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return null
 
-  userFetchPromise = (async () => {
-    try {
-      // 1. Get the auth user first with retry for transient network issues
-      const { data: { user }, error: userError } = await withRetry(() => 
-        withTimeout(supabase.auth.getUser(), 12000),
-        2, // 2 retries
-        1000 // 1s delay
-      ).catch(err => {
-        if (err.name === 'AbortError') return { data: { user: null }, error: null }
-        throw err
-      })
-      
-      if (userError || !user) {
-        if (userError) console.error('Auth getUser failed:', userError)
-        return null
-      }
+    // Attempt to fetch from the public profiles/users table
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single()
 
-      // 2. Try to get the profile from the 'users' table with retry
-      try {
-        const { data, error } = await withRetry(() => 
-          withTimeout(
-            supabase.from('users').select('*').eq('id', user.id).single(),
-            10000
-          ),
-          2,
-          1000
-        )
-        
-        if (error) {
-          console.warn('Profile fetch from DB failed, using metadata fallback:', error)
-          return { 
-            id: user.id, 
-            email: user.email, 
-            username: user.user_metadata?.username || user.email.split('@')[0],
-            avatar: user.user_metadata?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.id}`
-          }
-        }
-        return data
-      } catch (dbErr) {
-        console.warn('DB error in getCurrentUser after retries, using meta fallback:', dbErr)
-        return { 
-          id: user.id, 
-          email: user.email, 
-          username: user.user_metadata?.username || user.email.split('@')[0]
-        }
+    if (error) {
+      console.warn('Profile fetch from DB failed, using metadata fallback:', error)
+      // Fallback to Auth metadata if table fetch fails
+      return {
+        id: user.id,
+        email: user.email,
+        username: user.user_metadata?.username || user.email?.split('@')[0] || 'User',
+        avatar: user.user_metadata?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.id}`,
+        is_fallback: true
       }
-    } catch (error) {
-      console.error('getCurrentUser critical failure:', error)
-      return null
-    } finally {
-      // Clear the promise after a short delay to allow fresh fetches later if needed
-      // but long enough to deduplicate concurrent startup calls
-      setTimeout(() => { userFetchPromise = null }, 2000)
     }
-  })()
 
-  return userFetchPromise
+    return data
+  } catch (err) {
+    console.error('Fatal error in getCurrentUser:', err)
+    return null
+  }
 }
 
 // Upload helpers
@@ -191,4 +80,24 @@ export const uploadMedia = async (file, bucket = 'media') => {
   if (error) throw error
   const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName)
   return publicUrl
+}
+
+// Utility helpers for robust operations
+export const withTimeout = (promise, timeoutMs, errorMessage = 'Operation timed out') => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    })
+  ])
+}
+
+export const withRetry = async (fn, retries = 3, delay = 1000) => {
+  try {
+    return await fn()
+  } catch (error) {
+    if (retries <= 0) throw error
+    await new Promise(resolve => setTimeout(resolve, delay))
+    return withRetry(fn, retries - 1, delay)
+  }
 }

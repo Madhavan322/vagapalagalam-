@@ -196,6 +196,25 @@ alter publication supabase_realtime add table public.followers;
 -- =====================================================
 -- SEED DEMO DATA (optional — remove in production)
 -- =====================================================
--- After signing up via the app, you can insert demo posts like:
--- insert into public.posts (user_id, caption, media_url, type)
--- values ('<your-user-id>', 'Hello Vangapalagalam! 🌌', null, 'text');
+-- =====================================================
+-- 🛠️ URGENT DATA VISIBILITY REPAIR (Run if data isn't showing)
+-- =====================================================
+-- If you see 500 errors or data isn't showing, it's likely because 
+-- foreign keys were not established correctly. Run this section:
+
+ALTER TABLE public.messages 
+  DROP CONSTRAINT IF EXISTS messages_sender_id_fkey,
+  DROP CONSTRAINT IF EXISTS messages_receiver_id_fkey;
+
+ALTER TABLE public.messages
+  ADD CONSTRAINT messages_sender_id_fkey 
+  FOREIGN KEY (sender_id) REFERENCES public.users(id) ON DELETE CASCADE,
+  ADD CONSTRAINT messages_receiver_id_fkey 
+  FOREIGN KEY (receiver_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+-- Ensure RLS is correctly allowing selects
+DROP POLICY IF EXISTS "Public users are viewable by everyone" ON public.users;
+CREATE POLICY "Public users are viewable by everyone" ON public.users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can view their own messages" ON public.messages;
+CREATE POLICY "Users can view their own messages" ON public.messages FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);

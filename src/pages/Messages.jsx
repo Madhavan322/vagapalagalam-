@@ -140,7 +140,13 @@ export default function Messages() {
       const convMap = {}
       data?.forEach(msg => {
         const other = msg.sender_id === currentUserId ? msg.receiver : msg.sender
-        if (other && !convMap[other.id]) convMap[other.id] = { ...other, lastMsg: msg }
+        // Fallback profile if join failed or returned null
+        const profile = other || { 
+          id: msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id,
+          username: 'Unknown User',
+          avatar: null
+        }
+        if (!convMap[profile.id]) convMap[profile.id] = { ...profile, lastMsg: msg }
       })
       
       const convList = Object.values(convMap)
