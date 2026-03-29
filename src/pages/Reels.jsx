@@ -250,6 +250,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
               src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`}
               className="w-9 h-9 rounded-full border-2"
               style={{ borderColor: 'var(--accent-primary)' }}
+              loading="lazy"
             />
             <span className="font-semibold text-white text-sm">{reel.users?.username}</span>
           </div>

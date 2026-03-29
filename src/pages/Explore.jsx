@@ -157,7 +157,9 @@ export default function Explore() {
                 >
                   <div className="avatar-ring">
                     <img src={u.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${u.username}`}
-                      className="w-9 h-9 rounded-full object-cover bg-panel" />
+                      className="w-9 h-9 rounded-full object-cover bg-panel"
+                      loading="lazy"
+                    />
                   </div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{u.username}</p>
@@ -239,7 +241,7 @@ export default function Explore() {
                     onClick={() => navigate(`/profile/${u.id}`)}
                     className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
                   >
-                    <img src={u.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${u.username}`} className="w-10 h-10 rounded-full object-cover avatar-ring" />
+                    <img src={u.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${u.username}`} className="w-10 h-10 rounded-full object-cover avatar-ring" loading="lazy" />
                     <div>
                       <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{u.username}</p>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.bio}</p>

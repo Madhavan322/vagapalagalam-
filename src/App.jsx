@@ -75,31 +75,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Critical Fallback: Configuration Missing */}
-      {isConfigMissing && (
-        <div className="fixed inset-0 z-[110] bg-void flex flex-col items-center justify-center p-6 text-center border-t-2 border-accent-secondary/50">
-          <div className="text-4xl mb-4">🔑</div>
-          <h2 className="font-display font-bold text-accent-secondary mb-2">DATABASE NOT CONNECTED</h2>
-          <p className="text-sm text-muted mb-6 max-w-md">
-            The application is alive, but it can't find your Supabase keys. You must add <code className="text-accent-primary">VITE_SUPABASE_URL</code> and <code className="text-accent-primary">VITE_SUPABASE_ANON_KEY</code> to your Vercel Environment Variables.
-          </p>
-          <div className="flex flex-col gap-3 w-full max-w-xs">
-            <a 
-              href="https://vercel.com/docs/projects/environment-variables" 
-              target="_blank" 
-              className="btn-gradient px-6 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-display tracking-widest font-bold"
-            >
-              LEARN HOW TO ADD KEYS
-            </a>
-            <button 
-              onClick={() => window.location.reload()}
-              className="text-xs text-muted hover:text-white transition-colors"
-            >
-              Refresh page after adding
-            </button>
-          </div>
-        </div>
-      )}
       <div className="orb orb-cyan" style={{ width: '600px', height: '600px', top: '-200px', left: '-200px' }} />
       <div className="orb orb-purple" style={{ width: '500px', height: '500px', bottom: '-100px', right: '-100px' }} />
       <div className="orb orb-pink" style={{ width: '300px', height: '300px', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />

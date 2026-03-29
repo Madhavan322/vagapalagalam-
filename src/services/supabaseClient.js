@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
-export const isConfigMissing = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pzyvwakizibzrnyginst.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eXZ3YWtpemlienJueWdpbnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzcyNjIsImV4cCI6MjA4ODk1MzI2Mn0.UYVaKapwNhzzrZ96djCILfl38sSCVK1yHNJXQoUnijI'
+export const isConfigMissing = false; // Bypassing the check as we now have hardcoded fallbacks
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

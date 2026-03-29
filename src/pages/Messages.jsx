@@ -38,7 +38,7 @@ const SharedReel = ({ reelId }) => {
     >
       <div className="relative aspect-[9/16] h-40 rounded-xl overflow-hidden">
         {reel.media_url ? (
-          <video src={reel.media_url} className="w-full h-full object-cover" muted playsInline />
+          <video src={reel.media_url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
         ) : (
           <div className="w-full h-full bg-panel flex items-center justify-center p-4">
             <p className="text-[10px] text-center font-mono text-muted">{reel.caption?.slice(0, 40)}...</p>
@@ -52,7 +52,7 @@ const SharedReel = ({ reelId }) => {
       </div>
       <div className="p-2 flex items-center gap-2">
         <div className="w-5 h-5 rounded-full overflow-hidden border border-accent-primary/30">
-          <img src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`} className="w-full h-full object-cover" />
+          <img src={reel.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${reel.users?.username}`} className="w-full h-full object-cover" loading="lazy" />
         </div>
         <p className="text-[10px] font-bold text-accent-primary truncate">@{reel.users?.username}</p>
       </div>
@@ -328,7 +328,9 @@ export default function Messages() {
               >
                 <div className="avatar-ring flex-shrink-0">
                   <img src={conv.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${conv.username}`}
-                    className="w-11 h-11 rounded-full object-cover bg-panel" />
+                    className="w-11 h-11 rounded-full object-cover bg-panel"
+                    loading="lazy"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{conv.username}</p>
@@ -364,7 +366,9 @@ export default function Messages() {
           <>
             <div className="avatar-ring" style={{ borderColor: 'rgba(100,116,139,0.2)' }}>
               <img src={activeUser.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${activeUser.username}`}
-                className="w-9 h-9 rounded-full object-cover" />
+                className="w-9 h-9 rounded-full object-cover"
+                loading="lazy"
+              />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{activeUser.username}</p>

@@ -102,6 +102,7 @@ export default function PostCard({ post, onUpdate }) {
               src={post.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${post.users?.username}`}
               alt={post.users?.username}
               className="w-9 h-9 rounded-full object-cover bg-panel"
+              loading="lazy"
             />
           </div>
           <div>
@@ -154,6 +155,7 @@ export default function PostCard({ post, onUpdate }) {
                 loop
                 playsInline
                 muted
+                preload="metadata"
                 controls={videoPlaying}
                 autoPlay={videoPlaying}
               />
