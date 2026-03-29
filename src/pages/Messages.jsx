@@ -65,6 +65,7 @@ const SharedContent = ({ contentId }) => {
 export default function Messages() {
   const { userId } = useParams()
   const { user, session, initialized } = useAuthStore()
+  const currentUserId = session?.user?.id
   const navigate = useNavigate()
   const location = useLocation()
   useSEO('Messages', 'Secure real-time chat with your community.')
