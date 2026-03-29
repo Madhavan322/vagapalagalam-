@@ -60,6 +60,9 @@ export default function Home() {
       setHasMore(enriched.length === POSTS_PER_PAGE)
     } catch (e) {
       console.error('Failed to fetch posts:', e)
+      if (e.code === '42P17') {
+        toast.error('Database connection loop detected. Please run the repair script in supabase_setup.sql.')
+      }
     } finally {
       setLoading(false)
       setLoadingMore(false)

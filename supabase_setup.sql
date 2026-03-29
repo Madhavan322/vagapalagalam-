@@ -199,9 +199,23 @@ alter publication supabase_realtime add table public.followers;
 -- =====================================================
 -- 🛠️ URGENT DATA VISIBILITY REPAIR (Run if data isn't showing)
 -- =====================================================
--- If you see 500 errors or data isn't showing, it's likely because 
--- foreign keys were not established correctly. Run this section:
+-- If you see "infinite recursion detected in policy for relation 'users'"
+-- or 500 errors, run this entire block in your SQL Editor:
 
+-- 1. CLEAN UP ALL OLD POLICIES (This stops the infinite recursion)
+DROP POLICY IF EXISTS "Public users are viewable by everyone" ON public.users;
+DROP POLICY IF EXISTS "Users can view their own profiles" ON public.users;
+DROP POLICY IF EXISTS "Allow public read of profiles" ON public.users;
+DROP POLICY IF EXISTS "Profiles are public" ON public.users;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
+
+-- 2. CREATE CLEAN SELECT POLICY (The safest possible version)
+CREATE POLICY "Enable read access for all users" ON public.users FOR SELECT USING (true);
+CREATE POLICY "Enable insert for authenticated users" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Enable update for users based on id" ON public.users FOR UPDATE USING (auth.uid() = id);
+
+-- 3. FIX MESSAGES RELATIONSHIPS
 ALTER TABLE public.messages 
   DROP CONSTRAINT IF EXISTS messages_sender_id_fkey,
   DROP CONSTRAINT IF EXISTS messages_receiver_id_fkey;
@@ -212,9 +226,8 @@ ALTER TABLE public.messages
   ADD CONSTRAINT messages_receiver_id_fkey 
   FOREIGN KEY (receiver_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
--- Ensure RLS is correctly allowing selects
-DROP POLICY IF EXISTS "Public users are viewable by everyone" ON public.users;
-CREATE POLICY "Public users are viewable by everyone" ON public.users FOR SELECT USING (true);
-
+-- 4. CLEAN UP MESSAGE POLICIES
 DROP POLICY IF EXISTS "Users can view their own messages" ON public.messages;
+DROP POLICY IF EXISTS "Anyone can send messages" ON public.messages;
 CREATE POLICY "Users can view their own messages" ON public.messages FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "Authenticated users can send messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
