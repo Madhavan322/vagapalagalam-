@@ -21,6 +21,8 @@ function CommentPanel({ postId, onClose }) {
     const channel = supabase.channel(`comments-${postId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, 
         () => fetchComments())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, 
+        () => fetchComments())
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -29,7 +31,7 @@ function CommentPanel({ postId, onClose }) {
   const fetchComments = async () => {
     const { data } = await supabase
       .from('comments')
-      .select('*, users(username, avatar)')
+      .select('*, users(id, username, avatar)')
       .eq('post_id', postId)
       .order('created_at', { ascending: false })
     if (data) setComments(data)
@@ -55,6 +57,18 @@ function CommentPanel({ postId, onClose }) {
     }
   }
 
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Delete this comment?')) return
+    try {
+      const { error } = await supabase.from('comments').delete().eq('id', commentId)
+      if (error) throw error
+      setComments(prev => prev.filter(c => c.id !== commentId))
+      toast.success('Comment deleted')
+    } catch (err) {
+      toast.error('Failed to delete comment')
+    }
+  }
+
   return (
     <motion.div
       initial={{ y: '100%' }}
@@ -62,15 +76,16 @@ function CommentPanel({ postId, onClose }) {
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="absolute inset-x-0 bottom-0 z-50 glass-strong h-[60vh] rounded-t-3xl border-t border-white/10 flex flex-col"
+      style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}
     >
-      <div className="p-4 border-b border-white/5 flex items-center justify-between">
+      <div className="p-4 border-b border-white/5 flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
         <h3 className="text-xs font-display tracking-widest font-bold text-accent-primary">COMMENTS</h3>
         <button onClick={onClose} className="p-1 text-muted hover:text-white transition-colors">
-          <ArrowLeft size={18} className="rotate-270" style={{ transform: 'rotate(-90deg)' }} />
+          <ArrowLeft size={18} className="rotate-270" style={{ transform: 'rotate(-90deg)', color: 'var(--text-muted)' }} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
@@ -89,29 +104,39 @@ function CommentPanel({ postId, onClose }) {
           </div>
         ) : (
           comments.map(c => (
-            <div key={c.id} className="flex gap-3">
+            <div key={c.id} className="flex gap-3 group">
               <img src={c.users?.avatar || `https://api.dicebear.com/8.x/identicon/svg?seed=${c.users?.username}`} 
-                className="w-8 h-8 rounded-full border border-white/10" />
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[11px] font-bold text-white">@{c.users?.username}</span>
-                  <span className="text-[10px] text-faint">{formatDistanceToNow(new Date(c.created_at))} ago</span>
+                className="w-8 h-8 rounded-full border border-white/10" style={{ borderColor: 'var(--border-subtle)' }} loading="lazy" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold" style={{ color: 'var(--text-primary)' }}>@{c.users?.username}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{formatDistanceToNow(new Date(c.created_at))} ago</span>
+                  </div>
+                  {user?.id === c.user_id && (
+                    <button 
+                      onClick={() => handleDeleteComment(c.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-faint hover:text-red-500 transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm text-white/80 leading-relaxed">{c.content}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{c.text}</p>
               </div>
             </div>
           ))
         )}
       </div>
 
-      <form onSubmit={handlePost} className="p-4 border-t border-white/5 flex gap-3">
+      <form onSubmit={handlePost} className="p-4 border-t border-white/5 flex gap-3" style={{ borderColor: 'var(--border-subtle)' }}>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Add a comment..."
           className="cyber-input flex-1 px-4 py-2 text-sm"
         />
-        <button type="submit" className="p-2 btn-gradient rounded-xl">
+        <button type="submit" className="p-2 btn-gradient rounded-xl shadow-lg">
           <Send size={18} className="text-white" />
         </button>
       </form>
@@ -199,7 +224,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
               loop
               playsInline
               muted={muted}
-              preload="metadata"
+              preload={isActive ? "auto" : "metadata"}
             />
           ) : (
             <div className="w-full h-full bg-black" />
