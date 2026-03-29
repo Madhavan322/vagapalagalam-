@@ -41,7 +41,16 @@ export const useAuthStore = create(
             throw err
           })
 
-          if (error) throw error
+          // If the session check returned an error (like Refresh Token Not Found)
+          if (error) {
+            if (error.message?.includes('Refresh Token Not Found') || error.status === 400) {
+              console.warn('Auth session expired or invalid. Resetting state.')
+              set({ session: null, user: null, loading: false })
+              set({ initialized: true, initializing: false })
+              return
+            }
+            throw error
+          }
 
           if (session) {
             set({ session })
