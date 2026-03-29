@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Trash2, Send } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Play, Volume2, VolumeX, ArrowLeft, Trash2, Send, Smile, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase, withTimeout } from '../services/supabaseClient'
@@ -13,6 +13,8 @@ function CommentPanel({ postId, onClose }) {
   const [comments, setComments] = useState([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
   useEffect(() => {
     fetchComments()
@@ -129,7 +131,38 @@ function CommentPanel({ postId, onClose }) {
         )}
       </div>
 
-      <form onSubmit={handlePost} className="p-4 border-t border-white/5 flex gap-3" style={{ borderColor: 'var(--border-subtle)' }}>
+      <AnimatePresence>
+        {showEmoji && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            className="absolute bottom-20 left-4 z-[60] glass-strong p-3 rounded-2xl grid grid-cols-6 gap-2 border border-accent-primary/20 shadow-neon-primary"
+            style={{ background: 'var(--bg-elevated)' }}
+          >
+            {emojis.map(e => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => { setText(prev => prev + e); setShowEmoji(false); }}
+                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors text-lg"
+              >
+                {e}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <form onSubmit={handlePost} className="p-4 border-t border-white/5 flex gap-3 relative" style={{ borderColor: 'var(--border-subtle)' }}>
+        <button 
+          type="button" 
+          onClick={() => setShowEmoji(!showEmoji)}
+          className="p-2 hover:bg-white/5 rounded-xl transition-colors"
+          style={{ color: 'var(--accent-primary)', opacity: showEmoji ? 1 : 0.6 }}
+        >
+          <Smile size={20} />
+        </button>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -153,6 +186,7 @@ function ReelItem({ reel, isActive, shouldLoad }) {
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [playing, setPlaying] = useState(isActive)
+  const [isBuffering, setIsBuffering] = useState(false)
   const isOwner = user?.id === reel.user_id
 
   useEffect(() => {
@@ -225,6 +259,9 @@ function ReelItem({ reel, isActive, shouldLoad }) {
               playsInline
               muted={muted}
               preload={isActive ? "auto" : "metadata"}
+              onWaiting={() => setIsBuffering(true)}
+              onPlaying={() => setIsBuffering(false)}
+              onCanPlay={() => setIsBuffering(false)}
             />
           ) : (
             <div className="w-full h-full bg-black" />
@@ -235,6 +272,20 @@ function ReelItem({ reel, isActive, shouldLoad }) {
             <p className="text-2xl font-display font-bold text-gradient text-center px-8">{reel.caption}</p>
           </div>
         )}
+
+        {/* Buffering Overlay */}
+        <AnimatePresence>
+          {isBuffering && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center bg-black/10 z-20 pointer-events-none"
+            >
+              <Loader2 size={40} className="text-accent-primary animate-spin" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Play/Pause Overlay code same ... */}
         {!playing && reel.media_url && (

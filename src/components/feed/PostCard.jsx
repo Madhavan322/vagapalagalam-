@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Play, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Play, Trash2, Smile } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, withTimeout } from '../../services/supabaseClient'
 import { useAuthStore } from '../../context/authStore'
@@ -20,6 +20,8 @@ export default function PostCard({ post, onUpdate }) {
   const [comments, setComments] = useState(post.comments || [])
   const [videoPlaying, setVideoPlaying] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const emojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂', '💯', '✨', '🙏', '💬']
 
   const handleLike = async () => {
     if (!user) return
@@ -265,7 +267,37 @@ export default function PostCard({ post, onUpdate }) {
                 </div>
               ))}
             </div>
-            <form onSubmit={handleComment} className="flex gap-2 px-4 pb-4">
+            <AnimatePresence>
+              {showEmoji && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-16 left-4 z-50 glass-strong p-3 rounded-2xl grid grid-cols-6 gap-2 border border-accent-primary/20 shadow-neon-primary"
+                  style={{ background: 'var(--bg-elevated)' }}
+                >
+                  {emojis.map(e => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => { setComment(prev => prev + e); setShowEmoji(false); }}
+                      className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors text-lg"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <form onSubmit={handleComment} className="flex items-center gap-2 px-4 pb-4 relative">
+              <button 
+                type="button" 
+                onClick={() => setShowEmoji(!showEmoji)}
+                className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
+                style={{ color: 'var(--accent-primary)', opacity: showEmoji ? 1 : 0.6 }}
+              >
+                <Smile size={18} />
+              </button>
               <input
                 value={comment}
                 onChange={e => setComment(e.target.value)}

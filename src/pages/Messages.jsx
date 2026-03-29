@@ -264,9 +264,11 @@ export default function Messages() {
 
       if (error) throw error
       
-      // Replace optimistic message with real one
-      setMessages(prev => prev.map(m => m.id === tempId ? data : m))
-      updateConversationList(data, activeUser)
+      // Replace optimistic message with real one, ensuring data has the message
+      if (data) {
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...data, message: data.message || msgContent } : m))
+        updateConversationList({ ...data, message: data.message || msgContent }, activeUser)
+      }
     } catch (err) {
       console.error('Failed to send:', err)
       // Remove optimistic msg on error

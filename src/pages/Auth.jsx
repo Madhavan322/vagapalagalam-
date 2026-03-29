@@ -50,7 +50,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-void bg-grid flex items-center justify-center p-4">
+    <div className="min-h-screen bg-void bg-grid flex items-center justify-center p-4 transition-colors" data-theme="light" style={{ transitionDuration: '0ms' }}>
       <div className="orb orb-purple w-80 h-80 top-0 left-0 fixed" />
       <div className="orb orb-pink w-72 h-72 bottom-0 right-0 fixed" />
 
